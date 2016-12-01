@@ -1,7 +1,5 @@
 #! /bin/bash
 
-# $Id: generateSquidGuardConfig.sh,v 1.4 2016/11/17 10:35:12 orba6563 Exp $
-
 : ${BLACKLIST_DIR:=BL}
 
 classe_dirs=`
