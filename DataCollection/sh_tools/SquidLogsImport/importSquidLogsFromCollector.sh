@@ -1,31 +1,18 @@
 #! /bin/bash
 
 HERE=`dirname $0`
-CMD=`basename $0`
 
 #
 # script must be run here (for ssh config path)
 #
 cd "${HERE}"
 
-
-: ${stdout_log_file:="${CMD}.stdout.log"}
-: ${stderr_log_file:="${CMD}.stderr.log"}
-
-
-: ${redirect_output:=true}
-
-: ${import_logs_dir:=ClonedLogs}
+: ${import_logs_dir:=ClonedLogs/imported}
 
 : ${collector_ssh_remote_host_spec:="log-collector-wan"}
 
 : ${ssh_verbose_flag:=""}
 : ${ssh_command:=ssh ${ssh_verbose_flag} -F ssh-config}
-
-if ${redirect_output}
-then
-    exec 1>"${stdout_log_file}" 2>"${stderr_log_file}"
-fi
 
 if [ -r "myId.sh" ]
 then

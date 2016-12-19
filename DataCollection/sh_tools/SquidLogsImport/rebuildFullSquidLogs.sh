@@ -1,24 +1,10 @@
 #! /bin/bash
 
-HERE=`dirname $0`
-CMD=`basename $0`
-
-: ${stdout_log_file:="${HERE}/${CMD}.stdout.log"}
-: ${stderr_log_file:="${HERE}/${CMD}.stderr.log"}
-
-
-: ${redirect_output:=true}
-
 : ${import_logs_dir:=ClonedLogs/imported}
 : ${full_logs_file:=ClonedLogs/full_access.log}
 
 : ${remove_tmp:=true}
 : ${tmp_dir:=ClonedLogs/tmp}
-
-if ${redirect_output}
-then
-    exec 1>"${stdout_log_file}" 2>"${stderr_log_file}"
-fi
 
 if [ -r "myId.sh" ]
 then
@@ -32,7 +18,7 @@ date
 
 if ${remove_tmp}
 then
-    trap 0 'rm -rf "${tmp_dir}"'
+    trap 'rm -rf "${tmp_dir}"' 0
 fi
 
 # import_logs_dir is supposed to exist
