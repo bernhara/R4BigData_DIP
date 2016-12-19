@@ -3,30 +3,36 @@
 HERE=`dirname $0`
 CMD=`basename $0`
 
-: ${stdout_log_file:="${HERE}/${CMD}.stdout.log"}
-: ${stderr_log_file:="${HERE}/${CMD}.stderr.log"}
+#
+# script must be run here (for ssh config path)
+#
+cd "${HERE}"
+
+
+: ${stdout_log_file:="${CMD}.stdout.log"}
+: ${stderr_log_file:="${CMD}.stderr.log"}
 
 
 : ${redirect_output:=true}
 
-: ${import_logs_dir:=${HERE}/ClonedLogs}
+: ${import_logs_dir:=ClonedLogs}
 
 : ${collector_ssh_remote_host_spec:="log-collector-wan"}
 
 : ${ssh_verbose_flag:=""}
-: ${ssh_command:=ssh ${ssh_verbose_flag} -F ${HERE}/ssh-config}
+: ${ssh_command:=ssh ${ssh_verbose_flag} -F ssh-config}
 
 if ${redirect_output}
 then
     exec 1>"${stdout_log_file}" 2>"${stderr_log_file}"
 fi
 
-if [ -r "${HERE}/myId.sh" ]
+if [ -r "myId.sh" ]
 then
    # to prevent bad X flag
-   chmod +x "${HERE}myId.sh"
+   chmod +x "myId.sh"
 
-   . "${HERE}/myId.sh"
+   . ./myId.sh
 fi
 
 # check if provided environment contains the required information
@@ -49,6 +55,6 @@ date
 
 mkdir -p "${import_logs_dir}"
 
-chmod go-rwx ${HERE}/ssh-key-*
+chmod go-rwx ssh-key-*
 
-rsync -I -a -v -e "${ssh_command}" ${collector_ssh_remote_host_spec}:${remote_source_dir} ${import_logs_dir}
+rsync -a -v -z -e "${ssh_command}" ${collector_ssh_remote_host_spec}:${remote_source_dir} ${import_logs_dir}
