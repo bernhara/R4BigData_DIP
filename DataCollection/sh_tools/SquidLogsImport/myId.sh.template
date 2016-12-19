@@ -1,0 +1,10 @@
+#! /bin/bash
+
+#
+# set the squid_host_dns_name so that the remote folder on the squid logs Collector is valid
+#
+# the scanned remote folder is ~dip/CollectorIn/${squid_host_dns_name}
+
+: ${squid_host_dns_name:="LPuteaux-657-1-23-37.w193-251.abo.wanadoo.fr."}
+: ${remote_source_dir:="~/CollectorIn/${squid_host_dns_name}/squid3"}
+
