@@ -7,7 +7,7 @@ Host log-collector-*
 Host log-collector-wan
    HostName s-proxetnet.home
    Port 22
-   ProxyCommand ssh -F ssh-config log-collector-public-sshd-server "nc %h %p"
+   ProxyCommand ssh -F "${SSH_CONFIG_FILE}" log-collector-public-sshd-server "nc %h %p"
 
 Host ssh log-collector-public-sshd-server
    HostName s-m2m-gw.dtdns.net

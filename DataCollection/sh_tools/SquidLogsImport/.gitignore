@@ -1,4 +1,5 @@
-/myId.sh
 /ClonedLogs
 /*.log
+*-config
+
 
