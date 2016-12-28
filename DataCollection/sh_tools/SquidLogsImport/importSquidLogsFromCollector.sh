@@ -25,7 +25,7 @@ fi
 if [ -z "${my_name}" ]
 then
     echo "ERROR: shell variable \"my_name\" undefinded. See ${HERE}/${CMD}-config file." 1>&2
-    exit 1chmod +x "myId.sh"
+    exit 1
 fi
 
 if [ -z "${remote_source_dir}" ]
