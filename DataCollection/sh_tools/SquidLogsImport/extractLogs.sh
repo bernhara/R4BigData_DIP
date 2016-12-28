@@ -83,19 +83,11 @@ else
     end_date_since_epoch=`date -d "${hr_end_date}" +%s`
 fi
 
-exit 1
 
 : ${import_logs_dir:=${HERE}/ClonedLogs/imported}
-: ${full_logs_file:=${HERE}/ClonedLogs/full_access.log}
 
 : ${remove_tmp:=true}
 : ${tmp_dir:=ClonedLogs/tmp}
-
-if [ -r "myId.sh" ]
-then
-    echo "ERROR: shell variable \"my_name\" undefinded. See ${HERE}/${CMD}-config file." 1>&2
-    exit 1
-fi
 
 date
 
@@ -106,6 +98,24 @@ fi
 
 # import_logs_dir is supposed to exist
 mkdir -p "${tmp_dir}"
+
+cat - > "${tmp_dir}/extractLogs_source_squid_logs.txt"
+
+(
+    echo "${end_date_since_epoch} =====EXTRACT====END===="
+    echo "${start_date_since_epoch} =====EXTRACT====START===="
+) >> "${tmp_dir}/extractLogs_source_squid_logs.txt"
+
+sort -g --output="${tmp_dir}/extractLogs_marked_squid_logs.txt" "${tmp_dir}/extractLogs_source_squid_logs.txt"
+sed -n '/=====EXTRACT====START====/,/=====EXTRACT====END====/p' "${tmp_dir}/extractLogs_marked_squid_logs.txt" > "${tmp_dir}/extractLogs_extracted_subset.txt"
+sed \
+    -e '1d' \
+    -e '$d' "${tmp_dir}/extractLogs_extracted_subset.txt" > "${tmp_dir}/extractLogs_bounded_logs.txt"
+
+
+exit 1
+
+
 
 access_log_file_list=`find "${import_logs_dir}" -type f -name "access.log*" -print`
 
