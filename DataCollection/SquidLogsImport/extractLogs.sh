@@ -96,7 +96,7 @@ fi
 mkdir -p "${tmp_dir}"
 
 (
-    echo #    cat <&0
+    cat -
     echo "${end_date_since_epoch} =====EXTRACT====END===="
     echo "${start_date_since_epoch} =====EXTRACT====START===="
 ) > "${tmp_dir}/extractLogs_source_squid_logs.txt"
@@ -108,5 +108,3 @@ sed \
     -e '$d' "${tmp_dir}/extractLogs_extracted_subset.txt" > "${tmp_dir}/extractLogs_bounded_logs.txt"
 
 cat "${tmp_dir}/extractLogs_bounded_logs.txt"
-
-
