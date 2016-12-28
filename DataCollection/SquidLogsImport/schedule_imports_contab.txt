@@ -1,2 +1,2 @@
 # commands are run from home dir
-*/12 * * * *     ${HOME}/R4BigData_DIP/DataCollection/sh_tools/utils/redirectOutput.sh ${HOME}/R4BigData_DIP/DataCollection/sh_tools/SquidLogsImport/importSquidLogsFromCollector.sh
+*/12 * * * *     ${HOME}/R4BigData_DIP/DataCollection/utils/redirectOutput.sh ${HOME}/R4BigData_DIP/DataCollection/SquidLogsImport/importSquidLogsFromCollector.sh
