@@ -1,17 +1,24 @@
 #! /bin/bash
 
-: ${import_logs_dir:=ClonedLogs/imported}
-: ${full_logs_file:=ClonedLogs/full_access.log}
+HERE=`dirname $0`
+CMD=`basename $0`
+
+if [ -r "${HERE}/${CMD}-config" ]
+then
+    . "${HERE}/${CMD}-config"
+fi
+
+
+: ${import_logs_dir:=${HERE}/ClonedLogs/imported}
+: ${full_logs_file:=${HERE}/ClonedLogs/full_access.log}
 
 : ${remove_tmp:=true}
 : ${tmp_dir:=ClonedLogs/tmp}
 
 if [ -r "myId.sh" ]
 then
-   # to prevent bad X flag
-   chmod +x "myId.sh"
-
-   . ./myId.sh
+    echo "ERROR: shell variable \"my_name\" undefinded. See ${HERE}/${CMD}-config file." 1>&2
+    exit 1
 fi
 
 date
