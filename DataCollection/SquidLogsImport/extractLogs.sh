@@ -89,7 +89,7 @@ fi
 
 if ${remove_tmp}
 then
-    trap 'set -x; rm -rf "${tmp_dir}"' 0
+    trap 'rm -rf "${tmp_dir}"' 0
 fi
 
 # import_logs_dir is supposed to exist
