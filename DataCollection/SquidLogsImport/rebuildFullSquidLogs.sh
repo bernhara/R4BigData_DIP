@@ -13,15 +13,13 @@ fi
 : ${full_logs_file:=${HERE}/ClonedLogs/full_access.log}
 
 : ${remove_tmp:=true}
-: ${tmp_dir:=ClonedLogs/tmp}
+: ${tmp_dir:=`mktemp -u -p "${HERE}/ClonedLogs/tmp"`}
 
 if [ -r "myId.sh" ]
 then
     echo "ERROR: shell variable \"my_name\" undefinded. See ${HERE}/${CMD}-config file." 1>&2
     exit 1
 fi
-
-date
 
 if ${remove_tmp}
 then
@@ -50,3 +48,5 @@ access_log_file_list=`find "${import_logs_dir}" -type f -name "access.log*" -pri
 ) > "${tmp_dir}/summed_logs.txt"
 
 sort -g --output="${full_logs_file}" "${tmp_dir}/summed_logs.txt"
+
+cat "${tmp_dir}/summed_logs.txt"
