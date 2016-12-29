@@ -138,8 +138,8 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
 
     for squidguard_tag in squidguard_tags_for_web_request:
         tag_name_and_value_list = squidguard_tag.split ('=')
-        tag_name_and_value_tupplet = tuple (tag_name_and_value_list)
-        tag_name, tag_value = tag_name_and_value_tupplet
+        tag_name_and_value_tuple = tuple (tag_name_and_value_list)
+        tag_name, tag_value = tag_name_and_value_tuple
         web_request_analysis_dict[tag_name] = tag_value
     
     # analyse squidAccesslog input line
@@ -205,22 +205,24 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     input_file_line_numbers = 0
     
     # load
-    with open (squidGuardFileName) as squidGuardOuputFile, open (squidAccessLogFileName) as squidAccessLogFile, open (libSVMFileName, 'w') as libSVMFile:
-        while True:
-                        
-            squidguardLine = squidGuardOuputFile.readline()
-            if not squidguardLine:
-                break
-            
-            input_file_line_numbers += 1
-            squidAccesLogLine = squidAccessLogFile.readline()
-            
-            web_request_analysis_dict = analyzeSingleLogLine (squidguardLine, squidAccesLogLine)
-            
-            print (web_request_analysis_dict)
-            libsvm_formated_line = webRequestToLibSVMLine (web_request_analysis_dict)
-            print (libsvm_formated_line)
-            print (libsvm_formated_line, file=libSVMFile)
+    with open (squidGuardFileName) as squidGuardOuputFile:
+        with open (squidAccessLogFileName) as squidAccessLogFile:
+            with open (libSVMFileName, 'w') as libSVMFile:
+                while True:
+                                
+                    squidguardLine = squidGuardOuputFile.readline()
+                    if not squidguardLine:
+                        break
+                    
+                    input_file_line_numbers += 1
+                    squidAccesLogLine = squidAccessLogFile.readline()
+                    
+                    web_request_analysis_dict = analyzeSingleLogLine (squidguardLine, squidAccesLogLine)
+                    
+                    print (web_request_analysis_dict)
+                    libsvm_formated_line = webRequestToLibSVMLine (web_request_analysis_dict)
+                    print (libsvm_formated_line)
+                    print (libsvm_formated_line, file=libSVMFile)
     
     # generate "meta" file        
     libSVMMetaFileName = libSVMFileName + '.meta'
