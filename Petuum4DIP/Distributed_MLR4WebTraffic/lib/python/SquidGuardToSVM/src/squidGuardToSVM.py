@@ -247,8 +247,6 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     num_train_this_partition = num_train_total
     # FIXME: test file size is currently not computed
     num_test = 1
-    # TODO: should not be here
-    feature_dim = 10
     num_labels = len (_squidGuardCategories)
     
     if _feature_one_based:
@@ -266,7 +264,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     with open (libSVMMetaFileName, 'w') as libSVMMetaFile:
         print ('num_train_total: {}'.format (num_train_total), file=libSVMMetaFile)
         print ('num_train_this_partition: {}'.format (num_train_this_partition), file=libSVMMetaFile)
-        print ('feature_dim: {}'.format (feature_dim), file=libSVMMetaFile)
+        print ('feature_dim: {}'.format (_feature_dim), file=libSVMMetaFile)
         print ('num_labels: {}'.format (num_labels), file=libSVMMetaFile)
         print ('format: libsvm', file=libSVMMetaFile)
         print ('feature_one_based: {}'.format (feature_one_based), file=libSVMMetaFile)        
