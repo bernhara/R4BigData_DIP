@@ -4,6 +4,15 @@ import sys
 import hashlib
 
 import argparse
+from xml.sax.handler import feature_external_ges
+
+#
+# Globals
+#
+
+_squidGuardCategories = []
+_feature_one_based = False
+_label_one_based = False
 
 def hashStringToLibSVMValue (string_to_encode):
     
@@ -18,14 +27,14 @@ def hashStringToLibSVMValue (string_to_encode):
     return (md5_hash_as_float_string)
     
    
-squidGuardCategories = []
+
 
 def buildCategoryTable (squidGuardConfigurationFileName):
     
-    global squidGuardCategories
+    global _squidGuardCategories
     
     # 'none' is a predefined category
-    squidGuardCategories = ['none']
+    _squidGuardCategories = ['none']
         
     with open (squidGuardConfigurationFileName) as squidGuardConfigurationFile:
         for line in squidGuardConfigurationFile:
@@ -33,16 +42,22 @@ def buildCategoryTable (squidGuardConfigurationFileName):
             if len (splitted_line) == 3:
                 if splitted_line[0] == 'dest':
                     category = splitted_line[1]
-                    squidGuardCategories.append(category)
+                    _squidGuardCategories.append(category)
                     
                     
-def dumpCategoryTable (categoriesDumpFileName, startIndex=1):
+def dumpCategoryTable (categoriesDumpFileName):
     
-    global squidGuardCategories
+    global _squidGuardCategories
+    global _label_one_based
+    
+    if _label_one_based:
+        startIndex = 1
+    else:
+        startIndex = 0
     
     with open (categoriesDumpFileName, 'w') as categoriesDumpFile:
         
-        for indexed_category in enumerate (squidGuardCategories, start=startIndex):
+        for indexed_category in enumerate (_squidGuardCategories, start=startIndex):
             print ('{} {}'.format(indexed_category[0], indexed_category[1]), file = categoriesDumpFile)
   
 
@@ -119,26 +134,43 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
 
 def webRequestToLibSVMLine (web_request_analysis_dict):
     
+    global _feature_on_based
+    global _label_one_based    
+    
     print ('squidGuard group: {}'.format(web_request_analysis_dict['targetgroup']))
     
+    # How the resulting line will be formated
+    if _feature_one_based:
+        first_feature_index = 1
+    else:
+        first_feature_index = 0
+    
+    # the squidGuard computed category(ie. label) index
     _libSvmFormat = '{label_index:2d}'
-    _libSvmFormat += ' 2:{GET}'
-    _libSvmFormat += ' 3:{HEAD}'
-    _libSvmFormat += ' 4:{POST}'
-    _libSvmFormat += ' 5:{PUT}'
-    _libSvmFormat += ' 6:{DELETE}'
-    _libSvmFormat += ' 7:{CONNECT}'
-    _libSvmFormat += ' 8:{OPTIONS}'
-    _libSvmFormat += ' 9:{TRACE}'
-    _libSvmFormat += ' 10:{full_url}'
-    _libSvmFormat += ' 11:{source_host}'    
+    
+    feature_index = first_feature_index
+    
+    _libSvmFormat += ' ' + str(feature_index) + ':{GET}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{HEAD}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{POST}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{PUT}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{DELETE}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{CONNECT}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{OPTIONS}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{TRACE}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{full_url}'; feature_index += 1
+    _libSvmFormat += ' ' + str(feature_index) + ':{source_host}'; feature_index += 1
     
     libSVMLineData = {}
     
     # the label
     category = web_request_analysis_dict['targetgroup']
-    category_index = squidGuardCategories.index(category)
-    libSVMLineData['label_index'] = category_index + 1
+    # get a "0 based" category index
+    category_index = _squidGuardCategories.index(category)
+    if _label_one_based:
+        libSVMLineData['label_index'] = category_index + 1
+    else:
+        libSVMLineData['label_index'] = category_index
     
     # features
     
@@ -165,6 +197,9 @@ def webRequestToLibSVMLine (web_request_analysis_dict):
                 
           
 def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName):
+    
+    global _feature_on_based
+    global _label_one_based
     
     input_file_line_numbers = 0
     
@@ -194,13 +229,22 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     num_train_total = input_file_line_numbers
     # TODO: test with one worker, input file not split
     num_train_this_partition = num_train_total
-    # FIXME: test file size is corrently not computed
+    # FIXME: test file size is currently not computed
     num_test = 1
     # TODO: should not be here
     feature_dim = 11
-    num_labels = len (squidGuardCategories)
-    feature_one_based = 1
-    label_one_based = 1
+    num_labels = len (_squidGuardCategories)
+    
+    if _feature_one_based:
+        feature_one_based = 1
+    else:
+        feature_one_based = 0
+    
+    if _label_one_based:
+        label_one_based = 1
+    else:
+        label_one_based = 0
+          
     snappy_compressed = 0
     
     with open (libSVMMetaFileName, 'w') as libSVMMetaFile:
@@ -237,6 +281,9 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
 
 def main():
     
+    global _feature_one_based
+    global _label_one_based
+    
     parser = argparse.ArgumentParser(description='Generates a LIB SVM formated file for Squid Access Logs which have been labeled by squidGuard.')
     parser.add_argument("-s", "--squidAccessLogFile", metavar='<squid access log>', type=str, dest="squidAccessLogFile", required=True, 
                         help='The Squid access log file.')
@@ -249,13 +296,24 @@ def main():
     parser.add_argument("-c", "--squidGuardConf", metavar='<squidGuard configuration file>', type=str, dest="squidGuardConfigurationFile", required=True,
                         help='The squidGuard configuration file used to generate <squidGuard out>.')
     parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDumpFile", required=True,
-                        help='Generated file, containing the list of all matched categories with their LibSVM index. Each category index is considered as a LibSVM label.')        
+                        help='Generated file, containing the list of all matched categories with their LibSVM index. Each category index is considered as a LibSVM label.')
+    parser.add_argument("--featureOneBased", action='store_true', dest="featureOneBased", 
+                        help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
+    parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
+                        help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')            
     
-    args = parser.parse_args()    
+    args = parser.parse_args()
     
-#     squidGuardFileName = os.path.join ('samples', 'squidGuardOuput.txt')
-#     squidAccessLogFileName = os.path.join ('samples', 'squidAccessLogExamples.txt')
-#     libSVMFileName = os.path.join ('samples', 'libSVMExample.train.txt')
+    if args.featureOneBased:
+        _feature_one_based = True
+    else:
+        _feature_one_based = False
+        
+    if args.labelOneBased:
+        _label_one_based = True
+    else:
+        _label_one_based = False    
+    
 
     buildCategoryTable (args.squidGuardConfigurationFile)
     dumpCategoryTable (args.categoriesDumpFile)
