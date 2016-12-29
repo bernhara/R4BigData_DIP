@@ -91,6 +91,10 @@ squidGuardCategories = []
 def buildCategoryTable (squidGuardConfigurationFileName):
     
     global squidGuardCategories
+    
+    # 'none' is a predefined category
+    squidGuardCategories = ['none']
+        
     with open (squidGuardConfigurationFileName) as squidGuardConfigurationFile:
         for line in squidGuardConfigurationFile:
             splitted_line = line.split(maxsplit=3)
@@ -98,6 +102,16 @@ def buildCategoryTable (squidGuardConfigurationFileName):
                 if splitted_line[0] == 'dest':
                     category = splitted_line[1]
                     squidGuardCategories.append(category)
+                    
+                    
+def dumpCategoryTable (categoriesDumpFileName, startIndex=1):
+    
+    global squidGuardCategories
+    
+    with open (categoriesDumpFileName, 'w') as categoriesDumpFile:
+        
+        for indexed_category in enumerate (squidGuardCategories, start=startIndex):
+            print ('{} {}'.format(indexed_category[0], indexed_category[1]), file = categoriesDumpFile)
   
 
 
@@ -157,7 +171,6 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
     for squidguard_tag in squidguard_tags_for_web_request:
         tag_name_and_value_list = squidguard_tag.split ('=', maxsplit=1)
         tag_name_and_value_tuple = tuple (tag_name_and_value_list)
-        print ("ZZZZZ {}".format (tag_name_and_value_tuple))
         tag_name, tag_value = tag_name_and_value_tuple
         web_request_analysis_dict[tag_name] = tag_value
     
@@ -303,7 +316,7 @@ def main():
     These 2 files can be used as input to Petuum's MRL''')
     parser.add_argument("-c", "--squidGuardConf", metavar='<squidGuard configuration file>', type=str, dest="squidGuardConfigurationFile", required=True,
                         help='The squidGuard configuration file used to generate <squidGuard out>.')
-    parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDump", required=True,
+    parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDumpFile", required=True,
                         help='Generated file, containing the list of all matched categories with their LibSVM index. Each category index is considered as a LibSVM label.')        
     
     args = parser.parse_args()    
@@ -313,6 +326,7 @@ def main():
 #     libSVMFileName = os.path.join ('samples', 'libSVMExample.train.txt')
 
     buildCategoryTable (args.squidGuardConfigurationFile)
+    dumpCategoryTable (args.categoriesDumpFile)
     
     squidAccessLogFileName = args.squidAccessLogFile
     squidGuardFileName = args.squidGuardFile
