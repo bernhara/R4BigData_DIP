@@ -281,21 +281,16 @@ def main():
     The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
     These 2 files can be used as input to Petuum's MRL''')
     
-    parser.print_usage ()
-    sys.exit (1)
-
     args = parser.parse_args()    
     
 #     squidGuardFileName = os.path.join ('samples', 'squidGuardOuput.txt')
 #     squidAccessLogFileName = os.path.join ('samples', 'squidAccessLogExamples.txt')
 #     libSVMFileName = os.path.join ('samples', 'libSVMExample.train.txt')
 
+    squidAccessLogFileName = args.squidAccessLogFile
     squidGuardFileName = args.squidAccessLogFile
-    os.path.join ('samples', 'squidGuardOuput.txt')
-#     squidAccessLogFileName = os.path.join ('samples', 'squidAccessLogExamples.txt')
-#     libSVMFileName = os.path.join ('samples', 'libSVMExample.train.txt')
+    libSVMFileName = args.libSVMFile
     squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName)
-    
 
 if __name__ == '__main__':
     main()
