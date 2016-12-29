@@ -13,6 +13,7 @@ from xml.sax.handler import feature_external_ges
 _squidGuardCategories = []
 _feature_one_based = False
 _label_one_based = False
+_feature_dim = -1
 
 def hashStringToLibSVMValue (string_to_encode):
     
@@ -132,12 +133,11 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
         
     return web_request_analysis_dict
 
-def webRequestToLibSVMLine (web_request_analysis_dict):
-    
+def buildWebRequestToLibSVMLineFormater ():
+
     global _feature_on_based
     global _label_one_based    
-    
-    print ('squidGuard group: {}'.format(web_request_analysis_dict['targetgroup']))
+    global _feature_dim
     
     # How the resulting line will be formated
     if _feature_one_based:
@@ -147,6 +147,11 @@ def webRequestToLibSVMLine (web_request_analysis_dict):
     
     # the squidGuard computed category(ie. label) index
     _libSvmFormat = '{label_index:2d}'
+    
+    # list of features
+    
+    # FIXME: this should be computed!
+    _feature_dim = 10
     
     feature_index = first_feature_index
     
@@ -160,6 +165,14 @@ def webRequestToLibSVMLine (web_request_analysis_dict):
     _libSvmFormat += ' ' + str(feature_index) + ':{TRACE}'; feature_index += 1
     _libSvmFormat += ' ' + str(feature_index) + ':{full_url}'; feature_index += 1
     _libSvmFormat += ' ' + str(feature_index) + ':{source_host}'; feature_index += 1
+    
+    return _libSvmFormat
+        
+
+def webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat):
+    
+
+    print ('squidGuard group: {}'.format(web_request_analysis_dict['targetgroup']))
     
     libSVMLineData = {}
     
@@ -192,7 +205,7 @@ def webRequestToLibSVMLine (web_request_analysis_dict):
     libsvm_encoded_source_host = hashStringToLibSVMValue(source_host_in_request)
     libSVMLineData['source_host'] = libsvm_encoded_source_host    
     
-    libsvm_formated_line = _libSvmFormat.format(**libSVMLineData)
+    libsvm_formated_line = libSvmLineFormat.format(**libSVMLineData)
     return (libsvm_formated_line)
                 
           
@@ -200,6 +213,9 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     
     global _feature_on_based
     global _label_one_based
+    global _feature_dim
+    
+    libSvmLineFormat = buildWebRequestToLibSVMLineFormater ()
     
     input_file_line_numbers = 0
     
@@ -219,7 +235,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                     web_request_analysis_dict = analyzeSingleLogLine (squidguardLine, squidAccesLogLine)
                     
                     print (web_request_analysis_dict)
-                    libsvm_formated_line = webRequestToLibSVMLine (web_request_analysis_dict)
+                    libsvm_formated_line = webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat)
                     print (libsvm_formated_line)
                     print (libsvm_formated_line, file=libSVMFile)
     
@@ -232,7 +248,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     # FIXME: test file size is currently not computed
     num_test = 1
     # TODO: should not be here
-    feature_dim = 11
+    feature_dim = 10
     num_labels = len (_squidGuardCategories)
     
     if _feature_one_based:
