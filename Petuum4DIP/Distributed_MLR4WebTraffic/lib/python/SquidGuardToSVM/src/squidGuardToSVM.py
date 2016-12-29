@@ -80,8 +80,26 @@ squidGuardCategories = [
 'warez',
 'urlshortener',
 'alcohol',
+'imagehosting',
+'finance/insurance',
+'recreation/travel',
 'none'
 ]
+
+squidGuardCategories = []
+
+def buildCategoryTable (squidGuardConfigurationFileName):
+    
+    global squidGuardCategories
+    with open (squidGuardConfigurationFileName) as squidGuardConfigurationFile:
+        for line in squidGuardConfigurationFile:
+            splitted_line = line.split(maxsplit=3)
+            if len (splitted_line) == 3:
+                if splitted_line[0] == 'dest':
+                    category = splitted_line[1]
+                    squidGuardCategories.append(category)
+  
+
 
 httpMethodsList = [
     'GET',
@@ -137,8 +155,9 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
     squidguard_tags_for_web_request = squidguardLine.split('&')
 
     for squidguard_tag in squidguard_tags_for_web_request:
-        tag_name_and_value_list = squidguard_tag.split ('=')
+        tag_name_and_value_list = squidguard_tag.split ('=', maxsplit=1)
         tag_name_and_value_tuple = tuple (tag_name_and_value_list)
+        print ("ZZZZZ {}".format (tag_name_and_value_tuple))
         tag_name, tag_value = tag_name_and_value_tuple
         web_request_analysis_dict[tag_name] = tag_value
     
@@ -269,7 +288,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
 # snappy_compressed: 0
         
                                        
-# Read data in LIBSVM format
+
 
 def main():
     
@@ -282,6 +301,10 @@ def main():
                         help='''The resulting "LIB SVM" formated file, containing the classified content.
     The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
     These 2 files can be used as input to Petuum's MRL''')
+    parser.add_argument("-c", "--squidGuardConf", metavar='<squidGuard configuration file>', type=str, dest="squidGuardConfigurationFile", required=True,
+                        help='The squidGuard configuration file used to generate <squidGuard out>.')
+    parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDump", required=True,
+                        help='Generated file, containing the list of all matched categories with their LibSVM index. Each category index is considered as a LibSVM label.')        
     
     args = parser.parse_args()    
     
@@ -289,8 +312,10 @@ def main():
 #     squidAccessLogFileName = os.path.join ('samples', 'squidAccessLogExamples.txt')
 #     libSVMFileName = os.path.join ('samples', 'libSVMExample.train.txt')
 
+    buildCategoryTable (args.squidGuardConfigurationFile)
+    
     squidAccessLogFileName = args.squidAccessLogFile
-    squidGuardFileName = args.squidAccessLogFile
+    squidGuardFileName = args.squidGuardFile
     libSVMFileName = args.libSVMFile
     squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName)
 
