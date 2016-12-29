@@ -273,27 +273,6 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
         print ('label_one_based: {}'.format (label_one_based), file=libSVMMetaFile)
         print ('snappy_compressed: {}'.format (snappy_compressed), file=libSVMMetaFile)
         
-# TEST META INFO
-# num_test: 50
-# feature_dim: 54
-# num_labels: 7
-# format: libsvm
-# feature_one_based: 1
-# label_one_based: 1
-# snappy_compressed: 0
-
-# TRAIN META INFO
-# num_train_total: 500
-# num_train_this_partition: 500
-# feature_dim: 54
-# num_labels: 7
-# format: libsvm
-# feature_one_based: 1
-# label_one_based: 1
-# snappy_compressed: 0
-        
-                                       
-
 
 def main():
     
