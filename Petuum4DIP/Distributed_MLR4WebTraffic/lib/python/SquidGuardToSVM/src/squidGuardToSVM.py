@@ -4,7 +4,9 @@ import sys
 import hashlib
 
 import argparse
-from xml.sax.handler import feature_external_ges
+
+import logging
+logging.basicConfig (level=logging.ERROR)
 
 #
 # Globals
@@ -172,7 +174,7 @@ def buildWebRequestToLibSVMLineFormater ():
 def webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat):
     
 
-    print ('squidGuard group: {}'.format(web_request_analysis_dict['targetgroup']))
+    logging.debug ('squidGuard group: {}'.format(web_request_analysis_dict['targetgroup']))
     
     libSVMLineData = {}
     
@@ -234,9 +236,9 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                     
                     web_request_analysis_dict = analyzeSingleLogLine (squidguardLine, squidAccesLogLine)
                     
-                    print (web_request_analysis_dict)
+                    logging.debug (web_request_analysis_dict)
                     libsvm_formated_line = webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat)
-                    print (libsvm_formated_line)
+                    logging.debug (libsvm_formated_line)
                     print (libsvm_formated_line, file=libSVMFile)
     
     # generate "meta" file        
@@ -293,7 +295,8 @@ def main():
     parser.add_argument("--featureOneBased", action='store_true', dest="featureOneBased", 
                         help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
-                        help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')            
+                        help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
+    parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
     args = parser.parse_args()
     
@@ -305,7 +308,10 @@ def main():
     if args.labelOneBased:
         _label_one_based = True
     else:
-        _label_one_based = False    
+        _label_one_based = False   
+        
+    if args.debug:
+        logging.basicConfig (level=logging.DEBUG)
     
 
     buildCategoryTable (args.squidGuardConfigurationFile)
