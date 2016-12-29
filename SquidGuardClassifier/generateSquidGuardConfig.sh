@@ -29,7 +29,9 @@ do
     
 done
 
-echo "dbhome ${BLACKLIST_DIR}"
+dbhome=$(realpath "${BLACKLIST_DIR}")
+
+echo "dbhome ${dbhome}"
 echo "logdir /tmp"
 
 for category in ${categories}
