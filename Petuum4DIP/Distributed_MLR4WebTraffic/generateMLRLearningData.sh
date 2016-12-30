@@ -64,7 +64,7 @@ fi
 : ${squidGuard_conf:="${DIP_ROOT_DIR}/SquidGuardClassifier/squidGuard.conf"}
 : ${squidGuard_cmd:="squidGuard -c ${squidGuard_conf}"}
 
-: ${squidGuardToSVM_py:="${HERE}/lib/python/SquidGuardToSVM/src/squidGuardToSVM.py"}
+: ${squidGuardToSVM:="${HERE}/lib/python/SquidGuardToSVM/src/squidGuardToSVM.py"}
 
 #
 # Manage tmp storage
@@ -94,7 +94,7 @@ ${translateAccessLogToSquidGuardInput} \ |
 ( ${squidGuard_cmd} 2>${tmp_dir}/squidGuard.stderr ) \
  > "${tmp_dir}/squidGuardClassifiedLogs.txt"
 
-${python} "${squidGuardToSVM_py}" \
+"${squidGuardToSVM}" \
     --squidAccessLogFile "${tmp_dir}/access.log" \
     --squidGuardFile "${tmp_dir}/squidGuardClassifiedLogs.txt" \
     --libSVMFile "${tmp_dir}/access_libsvm.txt" \
