@@ -91,7 +91,8 @@ ${rebuidFillSquidLogs} > "${tmp_dir}/access.log"
 
 cat "${tmp_dir}/access.log" | \
 ${translateAccessLogToSquidGuardInput} \ |
-${squidGuard_cmd} > "${tmp_dir}/squidGuardClassifiedLogs.txt"
+( ${squidGuard_cmd} 2>${tmp_dir}/squidGuard.stderr ) \
+ > "${tmp_dir}/squidGuardClassifiedLogs.txt"
 
 ${python} "${squidGuardToSVM_py}" \
     --squidAccessLogFile "${tmp_dir}/access.log" \
