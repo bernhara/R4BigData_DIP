@@ -17,54 +17,31 @@ Usage ()
     then
 	echo "ERROR: $1" 1>&2
     fi
-    echo "Usage: ${CMD} <libsvm file name containing translated squid access logs>" 1>&2
+    echo "Usage: ${CMD} <worker hostname> [<worker hostname>]*" 1>&2
+    echo "NOTES: workers are indexed in appearing order (first specified worker has index 0)" 
     exit 1
 }
 
-libsvm_file=''
-labels_file=''
-
 set -- "${ARGarray[@]}"
 
+declare -a petuum_workers_specification_table
+
+worker_index=0
 while [ -n "$1" ]
 do
-    case "$1" in
-	# '-l' | '--labels' )
-	#     shift 1
-	#     labels_file="$1"
-	#     if [ -z "${labels_file}" ]
-	#     then
-	# 	Usage
-	#     fi
-	#     ;;
+    worker_hostname="$1"
 
-	* )
-	    if [ -n "${libsvm_file}" ]
-	    then
-		Usage
-	    fi
-	    libsvm_file="$1"
-	    ;;
-    esac
+    petuum_workers_specification_table[${table_index}]="${worker_index} ${worker_hostname}"
+    table_index=$(( ${table_index} + 1 ))
+
     shift
-    
+
 done
 
-# if [ -z "${libsvm_file}" ]
-# then
-#     Usage "Missing <source svm file> argument"
-# fi
-
-# if [ ! -r "${libsvm_file}" ]
-# then
-#     Usage "File \"${libsvm_file}\" not found"
-# fi
-
-# if [ ! -r "${libsvm_file}.meta" ]
-# then
-#     Usage "File \"${libsvm_file}.meta\" not found"
-# fi
-
+if [ ${table_index} -eq 0 ]
+then
+    Usage "Missing worker specification"
+fi
 
 ##############################################################################################
 
@@ -90,9 +67,6 @@ mkdir -p "${tmp_dir}"
 #
 
 
-declare -a petuum_workers
-petuum_workers_specification_table[0]="0 petuum-01"
-#petuum_workers_specification_table[1]="1 petuum-02"
 
 : ${petuum_interworker_tcp_port:=9999}
 num_clients=${#petuum_workers_specification_table[@]}
