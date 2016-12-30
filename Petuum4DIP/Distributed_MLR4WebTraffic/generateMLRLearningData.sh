@@ -72,8 +72,6 @@ fi
 : ${remove_tmp:=true}
 : ${tmp_dir:=`mktemp -u -p "${HERE}/tmp"`}
 
-: ${python:=python3}
-
 if ${remove_tmp}
 then
     trap 'rm -rf "${tmp_dir}"' 0
