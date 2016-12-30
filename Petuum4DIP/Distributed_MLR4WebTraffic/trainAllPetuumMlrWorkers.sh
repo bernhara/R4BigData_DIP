@@ -31,7 +31,7 @@ while [ -n "$1" ]
 do
     worker_hostname="$1"
 
-    petuum_workers_specification_list[${list_index}]="${worker_index} ${worker_hostname}"
+    petuum_workers_specification_list[${list_index}]="${list_index} ${worker_hostname}"
     list_index=$(( ${list_index} + 1 ))
 
     shift
@@ -102,9 +102,9 @@ GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 ${worker_name} \
 \
 /bin/bash -c \"\
-cd ${remote_here}; \
+cd ${remote_here} && \
 \
-${local_generate_learning_data_command}; \
+${local_generate_learning_data_command} && \
 \
 ${local_worker_mlr_command}
 \"\
