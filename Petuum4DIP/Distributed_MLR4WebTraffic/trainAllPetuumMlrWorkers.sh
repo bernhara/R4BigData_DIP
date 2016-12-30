@@ -24,21 +24,21 @@ Usage ()
 
 set -- "${ARGarray[@]}"
 
-declare -a petuum_workers_specification_table
+declare -a petuum_workers_specification_list
 
-worker_index=0
+list_index=0
 while [ -n "$1" ]
 do
     worker_hostname="$1"
 
-    petuum_workers_specification_table[${table_index}]="${worker_index} ${worker_hostname}"
-    table_index=$(( ${table_index} + 1 ))
+    petuum_workers_specification_list[${list_index}]="${worker_index} ${worker_hostname}"
+    list_index=$(( ${list_index} + 1 ))
 
     shift
 
 done
 
-if [ ${table_index} -eq 0 ]
+if [ ${#petuum_workers_specification_list[@]} -eq 0 ]
 then
     Usage "Missing worker specification"
 fi
@@ -69,7 +69,7 @@ mkdir -p "${tmp_dir}"
 
 
 : ${petuum_interworker_tcp_port:=9999}
-num_clients=${#petuum_workers_specification_table[@]}
+num_clients=${#petuum_workers_specification_list[@]}
 
 build_worker_mlr_cmd () {
 
@@ -115,7 +115,7 @@ ${local_worker_mlr_command}
 
 # generate server file
 (
-    for worker_specification in "${petuum_workers_specification_table[@]}"
+    for worker_specification in "${petuum_workers_specification_list[@]}"
     do
 	set -- ${worker_specification}
 	worker_index="$1"
@@ -126,7 +126,7 @@ ${local_worker_mlr_command}
 
 # lauch all workers
 
-for worker_specification in "${petuum_workers_specification_table[@]}"
+for worker_specification in "${petuum_workers_specification_list[@]}"
 do
     set -- ${worker_specification}
     worker_index="$1"
