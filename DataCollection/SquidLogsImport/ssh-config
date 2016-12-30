@@ -1,13 +1,12 @@
 Host log-collector-*
    User dip
-   IdentityFile ssh-key-to-s-proxetnet
    StrictHostKeyChecking no
    UserKnownHostsFile /dev/null
 
 Host log-collector-wan
    HostName s-proxetnet.home
    Port 22
-   ProxyCommand ssh -F "${SSH_CONFIG_FILE}" log-collector-public-sshd-server "nc %h %p"
+   ProxyCommand ssh -vv -F "${SSH_CONFIG_FILE}" -i "${SSH_PRIVATE_KEY_FILE}" log-collector-public-sshd-server "nc %h %p"
 
 Host ssh log-collector-public-sshd-server
    HostName s-m2m-gw.dtdns.net

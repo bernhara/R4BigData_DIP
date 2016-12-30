@@ -11,13 +11,14 @@ fi
 #
 # script must be run here (for ssh config path)
 #
-: ${import_logs_dir:=ClonedLogs/imported}
+: ${import_logs_dir:=${HERE}/ClonedLogs/imported}
 
 : ${collector_ssh_remote_host_spec:="log-collector-wan"}
 
 : ${ssh_verbose_flag:=""}
 : ${SSH_CONFIG_FILE:="${HERE}/ssh-config"}
-: ${ssh_command:=ssh ${ssh_verbose_flag} -F "${SSH_CONFIG_FILE}"}
+: ${SSH_PRIVATE_KEY_FILE:="${HERE}/ssh-key-to-s-proxetnet"}
+: ${ssh_command:=ssh ${ssh_verbose_flag} -F "${SSH_CONFIG_FILE}" -i "${SSH_PRIVATE_KEY_FILE}"}
 
 
 # check if provided environment contains the required information
@@ -39,8 +40,10 @@ date
 
 mkdir -p "${import_logs_dir}"
 
-chmod go-rwx ssh-key-*
+chmod go-rwx ${HERE}/ssh-key-*
 
 set -vx
-SSH_CONFIG_FILE="${SSH_CONFIG_FILE}" rsync -vv -a -e "${ssh_command}" ${collector_ssh_remote_host_spec}:${remote_source_dir} ${import_logs_dir}
+export SSH_CONFIG_FILE
+export SSH_PRIVATE_KEY_FILE
+rsync -vv -a -e "${ssh_command}" ${collector_ssh_remote_host_spec}:${remote_source_dir} ${import_logs_dir}
 set +vx
