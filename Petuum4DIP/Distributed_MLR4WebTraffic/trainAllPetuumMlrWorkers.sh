@@ -3,28 +3,79 @@
 HERE=`dirname $0`
 CMD=`basename $0`
 
+ARGarray=( "$@" )
+
 if [ -r "${HERE}/${CMD}-config" ]
 then
     . "${HERE}/${CMD}-config"
 fi
 
 
+Usage ()
+{
+    if [ -n "$1" ]
+    then
+	echo "ERROR: $1" 1>&2
+    fi
+    echo "Usage: ${CMD} <libsvm file name containing translated squid access logs>" 1>&2
+    exit 1
+}
+
+libsvm_file=''
+labels_file=''
+
+set -- "${ARGarray[@]}"
+
+while [ -n "$1" ]
+do
+    case "$1" in
+	# '-l' | '--labels' )
+	#     shift 1
+	#     labels_file="$1"
+	#     if [ -z "${labels_file}" ]
+	#     then
+	# 	Usage
+	#     fi
+	#     ;;
+
+	* )
+	    if [ -n "${libsvm_file}" ]
+	    then
+		Usage
+	    fi
+	    libsvm_file="$1"
+	    ;;
+    esac
+    shift
+    
+done
+
+if [ -z "${libsvm_file}" ]
+then
+    Usage "Missing <source svm file> argument"
+fi
+
+if [ ! -r "${libsvm_file}" ]
+then
+    Usage "File \"${libsvm_file}\" not found"
+fi
+
+if [ ! -r "${libsvm_file}.meta" ]
+then
+    Usage "File \"${libsvm_file}.meta\" not found"
+fi
+
+
+##############################################################################################
+
+
 : ${DIP_ROOT_DIR:="${HERE}/../.."}
-
-: ${rebuidFillSquidLogs:="${DIP_ROOT_DIR}/DataCollection/SquidLogsImport/rebuildFullSquidLogs.sh"}
-: ${translateAccessLogToSquidGuardInput:="${DIP_ROOT_DIR}/SquidGuardClassifier/translateAccessLogToSquidGuardInput.sh"}
-: ${squidGuard_conf:="${DIP_ROOT_DIR}/SquidGuardClassifier/squidGuard.conf"}
-: ${squidGuard_cmd:="squidGuard -c ${squidGuard_conf}"}
-
-: ${squidGuardToSVM_py:="${HERE}/lib/python/SquidGuardToSVM/src/squidGuardToSVM.py"}
 
 #
 # Manage tmp storage
 
 : ${remove_tmp:=true}
 : ${tmp_dir:=`mktemp -u -p "${HERE}/tmp"`}
-
-: ${python:=python3}
 
 if ${remove_tmp}
 then
@@ -35,98 +86,68 @@ fi
 mkdir -p "${tmp_dir}"
 
 #
-# Classify all available logs with squidGuard
+# Launch MLR on all workerd
 #
 
 
-${rebuidFillSquidLogs} > "${tmp_dir}/access.log"
-
-cat "${tmp_dir}/access.log" | \
-${translateAccessLogToSquidGuardInput} \ |
-${squidGuard_cmd} > "${tmp_dir}/squidGuardClassifiedLogs.txt"
-
-${python} "${squidGuardToSVM_py}" \
-    --squidAccessLogFile "${tmp_dir}/access.log" \
-    --squidGuardFile "${tmp_dir}/squidGuardClassifiedLogs.txt" \
-    --libSVMFile "${tmp_dir}/access_libsvm.txt" \
-    --squidGuardConf "${squidGuard_conf}" \
-    --categoriesDump "${tmp_dir}/labels.txt"
-
-
-exit 1
-
 declare -a petuum_workers
 petuum_workers_specification_table[0]="0 petuum-01"
-# petuum_workers_specification_table[1]="1 petuum-02"
+#petuum_workers_specification_table[1]="1 petuum-02"
 
 : ${petuum_interworker_tcp_port:=9999}
-num_clients=${#petuum_workers[@]}
-_last_petuum_workers_tab
+num_clients=${#petuum_workers_specification_table[@]}
 
 build_worker_mlr_cmd () {
 
     worker_index="$1"
     worker_name="$2"
 
-    worker_command=$( echo "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${worker_name} GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0  /share/Petuum/bosen/app/mlr/bin/mlr_main --num_comm_channels_per_client=1 --hostfile=${tmp}/localserver --staleness=2 --client_id=0 --num_app_threads=1 --num_clients=${num_clients} --use_weight_file=false --weight_file= --num_batches_per_epoch=10 --num_epochs=40 --output_file_prefix=${tmp_dir}/rez --lr_decay_rate=0.99 --num_train_eval=10000 --global_data=true --init_lr=0.01 --train_file=${tmp_dir}/access_libsvm.txt --num_test_eval=20 --perform_test=false --num_batches_per_eval=10 --lambda=0" )
+    remote_hostfile=$( realpath "${tmp_dir}/localserver" )
+    remote_train_file=$( realpath "${libsvm_file}" )
 
-    echo "${worker_comman}"
+    worker_command=$( echo "ssh \
+-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+${worker_name} \
+GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
+/share/Petuum/bosen/app/mlr/bin/mlr_main \
+--num_comm_channels_per_client=1 \
+--staleness=2 --client_id=0 --num_app_threads=1 \
+--num_clients=${num_clients} \
+--use_weight_file=false --weight_file= \
+--num_batches_per_epoch=10 --num_epochs=40 \
+--output_file_prefix=${tmp_dir}/rez \
+--lr_decay_rate=0.99 --num_train_eval=10000 \
+--global_data=true \
+--init_lr=0.01 \
+--num_test_eval=20 --perform_test=false --num_batches_per_eval=10 --lambda=0 \
+--hostfile=${remote_hostfile} \
+--train_file=${remote_train_file}
+" )
+
+    echo "${worker_command}"
 }
 
 # generate server file
 (
-    for worker_specification in petuum_workers_specification_table
+    for worker_specification in "${petuum_workers_specification_table[@]}"
     do
-	echo ${worker_specification} | read worker_index worker_hostname
+	set -- ${worker_specification}
+	worker_index="$1"
+	worker_hostname="$2"
 	echo ${worker_index} ${worker_hostname} ${petuum_interworker_tcp_port}
     done
-) > ${tmp}/localserver
+) > ${tmp_dir}/localserver
 
 # lauch all workers
 
+for worker_specification in "${petuum_workers_specification_table[@]}"
+do
+    set -- ${worker_specification}
+    worker_index="$1"
+    worker_hostname="$2"
+    launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_hostname}" )
+    ${launch_command} &
+done
 
-    
+wait
 
-
-
-
-
-
-
-
-##############################################################
-
-: ${import_logs_dir:=${HERE}/ClonedLogs/imported}
-: ${full_logs_file:=${HERE}/ClonedLogs/full_access.log}
-
-
-: ${tmp_dir:=`mktemp -u -p "${HERE}/ClonedLogs/tmp"`}
-
-if [ -r "myId.sh" ]
-then
-    echo "ERROR: shell variable \"my_name\" undefinded. See ${HERE}/${CMD}-config file." 1>&2
-    exit 1
-fi
-
-
-access_log_file_list=`find "${import_logs_dir}" -type f -name "access.log*" -print`
-
-# concatenate all log files
-
-(
-   for log_file in ${access_log_file_list}
-   do
-      case "${log_file}" in
-	  *.gz)
-	      zcat "${log_file}"
-	      ;;
-	  *)
-	      cat "${log_file}"
-	      ;;
-      esac
-   done
-) > "${tmp_dir}/summed_logs.txt"
-
-sort -g --output="${full_logs_file}" "${tmp_dir}/summed_logs.txt"
-
-cat "${tmp_dir}/summed_logs.txt"
