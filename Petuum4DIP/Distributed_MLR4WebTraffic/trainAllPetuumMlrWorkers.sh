@@ -158,8 +158,36 @@ do
     worker_index="$1"
     worker_hostname="$2"
     launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_hostname}" )
-    ( ${launch_command} ) 2>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log &
+    ( ${launch_command}; echo "$? ${worker_index} ${worker_hostname}">${tmp_dir}/worker-${worker_index}-${worker_hostname}.exit_status ) 2>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log &
 done
 
+# wait for termination af all lauched workers
 wait
 
+# test if some failed
+exit_status_file_list=${tmp_dir}/worker-*.exit_status
+for exit_status_file in ${exit_status_file_list}
+do
+    set -- $( cat "${exit_status_file}" )
+    exit_status=$1
+    worker_index=$2
+    woker_hostname=$3
+    if [ "${exit_status}" -ne "0" ]
+    then
+	(
+	    echo "ERROR: worker #${worker_index} ($worker_hostname) FAILED"
+	    echo
+	    echo "STDOUT:"
+	    echo
+	    echo "================================================================================="
+	    cat "${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log"
+	    echo "================================================================================="
+	    echo
+	    echo "STDERR:"
+	    echo
+	    echo "================================================================================="
+	    cat "${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log"
+	    echo "================================================================================="
+	) 1>&2
+    fi
+done
