@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 # TdB
 import os
 import sys
