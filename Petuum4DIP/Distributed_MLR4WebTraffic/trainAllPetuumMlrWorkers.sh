@@ -50,20 +50,20 @@ do
     
 done
 
-if [ -z "${libsvm_file}" ]
-then
-    Usage "Missing <source svm file> argument"
-fi
+# if [ -z "${libsvm_file}" ]
+# then
+#     Usage "Missing <source svm file> argument"
+# fi
 
-if [ ! -r "${libsvm_file}" ]
-then
-    Usage "File \"${libsvm_file}\" not found"
-fi
+# if [ ! -r "${libsvm_file}" ]
+# then
+#     Usage "File \"${libsvm_file}\" not found"
+# fi
 
-if [ ! -r "${libsvm_file}.meta" ]
-then
-    Usage "File \"${libsvm_file}.meta\" not found"
-fi
+# if [ ! -r "${libsvm_file}.meta" ]
+# then
+#     Usage "File \"${libsvm_file}.meta\" not found"
+# fi
 
 
 ##############################################################################################
@@ -102,12 +102,11 @@ build_worker_mlr_cmd () {
     worker_index="$1"
     worker_name="$2"
 
-    remote_hostfile=$( realpath "${tmp_dir}/localserver" )
-    remote_train_file=$( realpath "${libsvm_file}" )
+    remote_here=$( realpath "${HERE}" ) 
 
-    worker_command=$( echo "ssh \
--o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-${worker_name} \
+
+    local_generate_learning_data_command="./generateMLRLearningData.sh ${tmp_dir}/libsvm_access_log.txt -l ${tmp_dir}/labels.txt"
+    local_worker_mlr_command="\
 GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 /share/Petuum/bosen/app/mlr/bin/mlr_main \
 --num_comm_channels_per_client=1 \
@@ -120,11 +119,45 @@ GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 --global_data=true \
 --init_lr=0.01 \
 --num_test_eval=20 --perform_test=false --num_batches_per_eval=10 --lambda=0 \
---hostfile=${remote_hostfile} \
---train_file=${remote_train_file}
-" )
+--hostfile=${tmp_dir}/localserver \
+--train_file=${tmp_dir}/libsvm_access_log.txt \
+"
 
-    echo "${worker_command}"
+    remote_command="ssh \
+-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+${worker_name} \
+\
+/bin/bash -c \"\
+cd ${remote_here}; \
+\
+${local_generate_learning_data_command}; \
+\
+${local_worker_mlr_command}
+\"\
+"
+
+    generate_learning_data_command="ssh \
+-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+${worker_name} \
+\
+/bin/bash -c \"\
+cd ${remote_here} && \
+\
+${local_generate_learning_data_command} \
+\"\
+"
+
+    worker_mlr_command="ssh \
+-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+${worker_name} \
+\
+/bin/bash -c \"\
+cd ${remote_here} && \
+${worker_mlr_command}
+\"\
+"
+
+    echo "${remote_command}"
 }
 
 # generate server file
@@ -146,7 +179,8 @@ do
     worker_index="$1"
     worker_hostname="$2"
     launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_hostname}" )
-    ${launch_command} &
+    echo "XXXXX: ${launch_command} :YYYYYYY"
+    ( ${launch_command} ) # 2>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log
 done
 
 wait
