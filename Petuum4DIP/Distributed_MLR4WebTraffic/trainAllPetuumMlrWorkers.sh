@@ -136,27 +136,6 @@ ${local_worker_mlr_command}
 \"\
 "
 
-    generate_learning_data_command="ssh \
--o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-${worker_name} \
-\
-/bin/bash -c \"\
-cd ${remote_here} && \
-\
-${local_generate_learning_data_command} \
-\"\
-"
-
-    worker_mlr_command="ssh \
--o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-${worker_name} \
-\
-/bin/bash -c \"\
-cd ${remote_here} && \
-${worker_mlr_command}
-\"\
-"
-
     echo "${remote_command}"
 }
 
@@ -179,8 +158,7 @@ do
     worker_index="$1"
     worker_hostname="$2"
     launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_hostname}" )
-    echo "XXXXX: ${launch_command} :YYYYYYY"
-    ( ${launch_command} ) # 2>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log
+    ( ${launch_command} ) 2>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log &
 done
 
 wait
