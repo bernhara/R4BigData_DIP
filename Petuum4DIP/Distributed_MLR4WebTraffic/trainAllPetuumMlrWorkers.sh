@@ -17,8 +17,9 @@ Usage ()
     then
 	echo "ERROR: $1" 1>&2
     fi
-    echo "Usage: ${CMD} <worker hostname> [<worker hostname>]*" 1>&2
-    echo "NOTES: workers are indexed in appearing order (first specified worker has index 0)" 
+    echo "Usage: ${CMD} <worker specification> [<worker specification>]*" 1>&2
+    echo "with <worker specification> having the following form: [<remote user>@]<worker hostname>[:<mlr remote folder installation dir if different>]" 1>&2
+    echo "NOTES: workers are indexed in appearing order (first specified worker has index 0)" 1>&2
     exit 1
 }
 
@@ -29,14 +30,34 @@ declare -a petuum_workers_specification_list
 list_index=0
 while [ -n "$1" ]
 do
-    worker_hostname="$1"
+    worker_specification="$1"
 
-    petuum_workers_specification_list[${list_index}]="${list_index} ${worker_hostname}"
+    worked_index="${list_index}"
+
+    worker_ssh_specification="${worker_specification%:*}"
+    worker_ssh_hostname="${worker_ssh_specification#*@}"
+    worker_ssh_remote_user="${worker_ssh_specification%@*}"
+    if [ "${worker_ssh_remote_user}" = "${worker_ssh_specification}" ]
+    then
+	# no remote user specified
+	worker_ssh_remote_user=""
+    fi
+
+    worker_ssh_remote_path_specification="${worker_specification#*:}"
+    if [ "${worker_ssh_remote_path_specification}" = "${worker_specification}" ]
+    then
+	# no remote path specified => same path
+	worker_ssh_remote_path_specification="."
+    fi
+
+    petuum_workers_specification_list[${worker_index}]="'${list_index}' '${worker_ssh_remote_user}' '${worker_ssh_hostname}' '${worker_ssh_remote_path_specification}'"
     list_index=$(( ${list_index} + 1 ))
 
     shift
 
 done
+echo "${petuum_workers_specification_list[@]}"
+exit 1
 
 if [ ${#petuum_workers_specification_list[@]} -eq 0 ]
 then
@@ -59,6 +80,10 @@ then
     trap 'rm -rf "${tmp_dir}"' 0
 fi
 
+realpath () {
+    readlink --canonicalize "$1"
+}
+
 # import_logs_dir is supposed to exist
 mkdir -p "${tmp_dir}"
 
@@ -67,14 +92,13 @@ mkdir -p "${tmp_dir}"
 #
 
 
-
 : ${petuum_interworker_tcp_port:=9999}
 num_clients=${#petuum_workers_specification_list[@]}
 
 build_worker_mlr_cmd () {
 
     worker_index="$1"
-    worker_name="$2"
+    worker_ssh_hostname="$2"
 
     remote_here=$( realpath "${HERE}" ) 
 
@@ -99,7 +123,7 @@ GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 
     remote_command="ssh \
 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-${worker_name} \
+${worker_ssh_hostname} \
 \
 /bin/bash -c \"\
 cd ${remote_here} && \
@@ -119,7 +143,9 @@ ${local_worker_mlr_command}
     do
 	set -- ${worker_specification}
 	worker_index="$1"
-	worker_hostname="$2"
+	worker_ssh_hostname="$2"
+	# ssh host destination make contain a leading "user@". Remove it to get the real hostname
+	worker_hostname="${worker_ssh_hostname#*@}"
 	echo ${worker_index} ${worker_hostname} ${petuum_interworker_tcp_port}
     done
 ) > ${tmp_dir}/localserver
@@ -130,9 +156,9 @@ for worker_specification in "${petuum_workers_specification_list[@]}"
 do
     set -- ${worker_specification}
     worker_index="$1"
-    worker_hostname="$2"
-    launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_hostname}" )
-    ( ${launch_command}; echo "$? ${worker_index} ${worker_hostname}">${tmp_dir}/worker-${worker_index}-${worker_hostname}.exit_status ) 2>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log &
+    worker_ssh_hostname="$2"
+    launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_ssh_hostname}" )
+    ( ${launch_command}; echo "$? ${worker_index} ${worker_ssh_hostname}">${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.exit_status ) 2>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stdout.log &
 done
 
 # wait for termination af all lauched workers
@@ -145,22 +171,22 @@ do
     set -- $( cat "${exit_status_file}" )
     exit_status=$1
     worker_index=$2
-    woker_hostname=$3
+    woker_ssh_hostname=$3
     if [ "${exit_status}" -ne "0" ]
     then
 	(
-	    echo "ERROR: worker #${worker_index} ($worker_hostname) FAILED"
+	    echo "ERROR: worker #${worker_index} ($worker_ssh_hostname) FAILED"
 	    echo
 	    echo "STDOUT:"
 	    echo
 	    echo "================================================================================="
-	    cat "${tmp_dir}/worker-${worker_index}-${worker_hostname}.stdout.log"
+	    cat "${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stdout.log"
 	    echo "================================================================================="
 	    echo
 	    echo "STDERR:"
 	    echo
 	    echo "================================================================================="
-	    cat "${tmp_dir}/worker-${worker_index}-${worker_hostname}.stderr.log"
+	    cat "${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stderr.log"
 	    echo "================================================================================="
 	) 1>&2
     fi
