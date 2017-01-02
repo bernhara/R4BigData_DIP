@@ -23,6 +23,10 @@ Usage ()
     exit 1
 }
 
+realpath () {
+    readlink --canonicalize "$1"
+}
+
 set -- "${ARGarray[@]}"
 
 declare -a petuum_workers_specification_list
@@ -47,7 +51,7 @@ do
     if [ "${worker_ssh_remote_path_specification}" = "${worker_specification}" ]
     then
 	# no remote path specified => same path
-	worker_ssh_remote_path_specification="."
+	worker_ssh_remote_path_specification=$( realpath "${HERE}" )
     fi
 
     petuum_workers_specification_list[${worker_index}]="'${list_index}' '${worker_ssh_remote_user}' '${worker_ssh_hostname}' '${worker_ssh_remote_path_specification}'"
@@ -56,8 +60,6 @@ do
     shift
 
 done
-echo "${petuum_workers_specification_list[@]}"
-exit 1
 
 if [ ${#petuum_workers_specification_list[@]} -eq 0 ]
 then
@@ -80,10 +82,6 @@ then
     trap 'rm -rf "${tmp_dir}"' 0
 fi
 
-realpath () {
-    readlink --canonicalize "$1"
-}
-
 # import_logs_dir is supposed to exist
 mkdir -p "${tmp_dir}"
 
@@ -97,10 +95,12 @@ num_clients=${#petuum_workers_specification_list[@]}
 
 build_worker_mlr_cmd () {
 
-    worker_index="$1"
-    worker_ssh_hostname="$2"
+    worker_index="${worker_specification_array[0]}"
+    worker_ssh_remote_user="${worker_specification_array[1]}"
+    worker_ssh_hostname="${worker_specification_array[2]}"
+    worker_ssh_remote_path_specification="${worker_specification_array[3]}"
 
-    remote_here=$( realpath "${HERE}" ) 
+    worker_ssh_remote_path_specification=$( realpath "${HERE}" ) 
 
 
     local_generate_learning_data_command="./generateMLRLearningData.sh ${tmp_dir}/libsvm_access_log.txt -l ${tmp_dir}/labels.txt"
@@ -126,7 +126,7 @@ GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 ${worker_ssh_hostname} \
 \
 /bin/bash -c \"\
-cd ${remote_here} && \
+cd ${worker_ssh_remote_path_specification} && \
 \
 ${local_generate_learning_data_command} && \
 \
@@ -141,12 +141,15 @@ ${local_worker_mlr_command}
 (
     for worker_specification in "${petuum_workers_specification_list[@]}"
     do
-	set -- ${worker_specification}
-	worker_index="$1"
-	worker_ssh_hostname="$2"
-	# ssh host destination make contain a leading "user@". Remove it to get the real hostname
-	worker_hostname="${worker_ssh_hostname#*@}"
-	echo ${worker_index} ${worker_hostname} ${petuum_interworker_tcp_port}
+	
+	# transform the list into an array (all elements are quoted to handle empty elements (=> eval)
+	eval worker_specification_array=( ${worker_specification} )
+	worker_index="${worker_specification_array[0]}"
+	worker_ssh_remote_user="${worker_specification_array[1]}"
+	worker_ssh_hostname="${worker_specification_array[2]}"
+	worker_ssh_remote_path_specification="${worker_specification_array[3]}"
+
+	echo ${worker_index} ${worker_ssh_hostname} ${petuum_interworker_tcp_port}
     done
 ) > ${tmp_dir}/localserver
 
@@ -154,10 +157,14 @@ ${local_worker_mlr_command}
 
 for worker_specification in "${petuum_workers_specification_list[@]}"
 do
-    set -- ${worker_specification}
-    worker_index="$1"
-    worker_ssh_hostname="$2"
-    launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_ssh_hostname}" )
+    # transform the list into an array (all elements are quoted to handle empty elements (=> eval)
+    eval worker_specification_array=( ${worker_specification} )
+    worker_index="${worker_specification_array[0]}"
+    worker_ssh_remote_user="${worker_specification_array[1]}"
+    worker_ssh_hostname="${worker_specification_array[2]}"
+    worker_ssh_remote_path_specification="${worker_specification_array[3]}"
+
+    launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_ssh_remote_user}" "${worker_ssh_hostname}" "${worker_ssh_remote_path_specification}" )
     ( ${launch_command}; echo "$? ${worker_index} ${worker_ssh_hostname}">${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.exit_status ) 2>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stdout.log &
 done
 
