@@ -17,7 +17,7 @@ Usage ()
     then
 	echo "ERROR: $1" 1>&2
     fi
-    echo "Usage: ${CMD} <worker specification> [<worker specification>]*" 1>&2
+    echo "Usage: ${CMD} [--dryrun] <worker specification> [<worker specification>]*" 1>&2
     echo "with <worker specification> having the following form: [<remote user>@]<worker hostname>[:<mlr remote folder installation dir if different>]" 1>&2
     echo "NOTES: workers are indexed in appearing order (first specified worker has index 0)" 1>&2
     exit 1
@@ -28,6 +28,13 @@ realpath () {
 }
 
 set -- "${ARGarray[@]}"
+
+dryrun=false
+if [ "$1" = "--dryrun" ]
+then
+    dryrun=true
+    shift 1
+fi
 
 declare -a petuum_workers_specification_list
 
@@ -100,8 +107,12 @@ build_worker_mlr_cmd () {
     worker_ssh_hostname="${worker_specification_array[2]}"
     worker_ssh_remote_path_specification="${worker_specification_array[3]}"
 
-    worker_ssh_remote_path_specification=$( realpath "${HERE}" ) 
-
+    if [ -n "${worker_ssh_remote_user}" ]
+    then
+	ssh_remote_specification="${worker_ssh_remote_user}@${worker_ssh_hostname}"
+    else
+	ssh_remote_specification="${worker_ssh_hostname}"
+    fi
 
     local_generate_learning_data_command="./generateMLRLearningData.sh ${tmp_dir}/libsvm_access_log.txt -l ${tmp_dir}/labels.txt"
     local_worker_mlr_command="\
@@ -123,7 +134,7 @@ GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 
     remote_command="ssh \
 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-${worker_ssh_hostname} \
+${worker_remote_specification} \
 \
 /bin/bash -c \"\
 cd ${worker_ssh_remote_path_specification} && \
