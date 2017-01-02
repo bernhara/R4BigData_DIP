@@ -109,9 +109,9 @@ build_worker_mlr_cmd () {
 
     if [ -n "${worker_ssh_remote_user}" ]
     then
-	ssh_remote_specification="${worker_ssh_remote_user}@${worker_ssh_hostname}"
+	worker_ssh_remote_specification="${worker_ssh_remote_user}@${worker_ssh_hostname}"
     else
-	ssh_remote_specification="${worker_ssh_hostname}"
+	worker_ssh_remote_specification="${worker_ssh_hostname}"
     fi
 
     local_generate_learning_data_command="./generateMLRLearningData.sh ${tmp_dir}/libsvm_access_log.txt -l ${tmp_dir}/labels.txt"
@@ -134,15 +134,16 @@ GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 
     remote_command="ssh \
 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-${worker_remote_specification} \
+${worker_ssh_remote_specification} \
 \
-/bin/bash -c \"\
+'/bin/bash -c \"\
 cd ${worker_ssh_remote_path_specification} && \
 \
 ${local_generate_learning_data_command} && \
 \
-${local_worker_mlr_command}
+${local_worker_mlr_command}\
 \"\
+'\
 "
 
     echo "${remote_command}"
@@ -176,14 +177,26 @@ do
     worker_ssh_remote_path_specification="${worker_specification_array[3]}"
 
     launch_command=$( build_worker_mlr_cmd "${worker_index}" "${worker_ssh_remote_user}" "${worker_ssh_hostname}" "${worker_ssh_remote_path_specification}" )
-    ( ${launch_command}; echo "$? ${worker_index} ${worker_ssh_hostname}">${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.exit_status ) 2>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stdout.log &
+
+    if $dryrun
+    then
+	echo "** would execute **: ${launch_command}"
+    else
+	(
+	    ${launch_command}
+	    echo "$? ${worker_index} ${worker_ssh_hostname}">${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.exit_status
+	) 2>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stdout.log
+
+    fi
+
+    
 done
 
 # wait for termination af all lauched workers
 wait
 
 # test if some failed
-exit_status_file_list=${tmp_dir}/worker-*.exit_status
+exit_status_file_list=$( ls -1 ${tmp_dir}/worker-*.exit_status  2>/dev/null )
 for exit_status_file in ${exit_status_file_list}
 do
     set -- $( cat "${exit_status_file}" )
