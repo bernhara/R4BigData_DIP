@@ -10,6 +10,9 @@ then
     . "${HERE}/${CMD}-config"
 fi
 
+# Globals
+: ${PETUUM_INSTALL_DIR:=/share/Petuum}
+: ${MLR_MAIN:="${PETUUM_INSTALL_DIR}/bosen/app/mlr/bin/mlr_main"}
 
 Usage ()
 {
@@ -106,8 +109,12 @@ mkdir -p "${tmp_dir}"
 
 "${HERE}/generateMLRLearningData.sh" ${tmp_dir}/libsvm_access_log.txt -l ${tmp_dir}/labels.txt
 
+# TODO: which args should be parametrized
+
+num_clients=${#petuum_workers_specification_list[@]}
+
 GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
-/share/Petuum/bosen/app/mlr/bin/mlr_main \
+"${MLR_MAIN}" \
    --num_comm_channels_per_client=1 \
    --staleness=2 --client_id=0 --num_app_threads=1 \
    --num_clients=${num_clients} \
