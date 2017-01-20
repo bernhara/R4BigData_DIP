@@ -137,18 +137,15 @@ build_worker_mlr_cmd () {
     fi
 
     local_worker_command="\
-./trainWorker.sh ${worker_index} ${worker_launcher_common_args} \
+${worker_ssh_remote_path_specification}/trainWorker.sh ${worker_index} ${worker_launcher_common_args} \
 "
 
     remote_command="ssh \
 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 ${worker_ssh_remote_specification} \
 \
-/bin/bash -c \"\
-cd ${worker_ssh_remote_path_specification} && \
-\
 ${local_worker_command}\
-\"\
+\
 "
 
     echo "${remote_command}"
