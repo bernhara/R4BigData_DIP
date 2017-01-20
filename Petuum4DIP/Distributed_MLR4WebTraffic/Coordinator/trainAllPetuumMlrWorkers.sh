@@ -146,12 +146,11 @@ build_worker_mlr_cmd () {
 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 ${worker_ssh_remote_specification} \
 \
-'/bin/bash -c \"\
+/bin/bash -c \"\
 cd ${worker_ssh_remote_path_specification} && \
 \
 ${local_worker_command}\
 \"\
-'\
 "
 
     echo "${remote_command}"
