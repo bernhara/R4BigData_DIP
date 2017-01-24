@@ -72,6 +72,45 @@ then
 fi
 
 ##############################################################################################
+#
+# Utils
+#
+
+globalDataFormatToWorkerLocalDataFormat ()
+{
+    global_data_libsvm_file="$1"
+    num_clients="$2"
+    local_sample_size="$3"
+    local_data_libsvm_file="$4"
+
+    global_data_libsvm_meta_file="$1.meta"
+    local_data_libsvm_meta_file="$4.meta"
+
+    global_sample_size=$(( ${num_clients} * ${local_sample_size} ))
+
+    tmp_array=( $( grep 'num_train_this_partition' "${global_data_libsvm_meta_file}"  ) )
+    global_data_num_train_this_partition=${tmp_array[1]}
+
+    if [ "${global_data_num_train_this_partition}" -lt "${local_sample_size}" ]
+    then
+	# not enough data in provided sample
+	Usage "Requested sample size is ${sample_size} but they are only ${global_data_num_train_this_partition} currently available"
+	# not reached
+    fi
+
+    # generate sample subset
+    tail --lines="${local_sample_size}" "${global_data_libsvm_file}" > "${local_data_libsvm_file}"
+
+    # generate the corresponding meta file
+    sed \
+	-e "/num_train_total/s/:.*/: ${global_sample_size}/" \
+	-e "/num_train_this_partition/s/:.*/: ${local_sample_size}/" \
+	"${global_data_libsvm_meta_file}" \
+	> "${local_data_libsvm_meta_file}"
+
+}
+
+##############################################################################################
 
 #
 # Manage tmp storage
@@ -114,21 +153,63 @@ mkdir -p "${tmp_dir}"
 # - ${tmp_dir}/labels.txt
 "${HERE}/generateMLRLearningData.sh" ${tmp_dir}/libsvm_access_log.txt -l ${tmp_dir}/labels.txt
 
+#
+# SWITCH between single worker and distributed learning with _multiple workers_ and _split input data_
+#
+
+if [ ${#petuum_workers_specification_list[@]} -ge 2 ]
+then
+    # Distributed version
+    partitioned_mode=true
+else
+    partitioned_mode=false
+fi
+
+
+
+if ${partitioned_mode}
+then
+    # Distributed version
+    globalDataFormatToWorkerLocalDataFormat \
+	"${tmp_dir}/libsvm_access_log.txt" \
+	2 \
+	10 \
+	"${tmp_dir}/libsvm_access_log.txt.${this_worker_index}"
+	
+    
+    mlr_arg_global_data=false
+
+else
+    mlr_arg_global_data=true
+
+fi
+
+
 # TODO: which args should be parametrized
 
 num_clients=${#petuum_workers_specification_list[@]}
 
-GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
+command='GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 "${MLR_MAIN}" \
    --num_comm_channels_per_client=1 \
-   --staleness=2 --client_id=0 --num_app_threads=1 \
+   --staleness=2 \
+   --client_id="${this_worker_index}" \
+   --num_app_threads=1 \
    --num_clients=${num_clients} \
    --use_weight_file=false --weight_file= \
    --num_batches_per_epoch=10 --num_epochs=40 \
    --output_file_prefix=${tmp_dir}/rez \
    --lr_decay_rate=0.99 --num_train_eval=10000 \
-   --global_data=true \
+   --global_data=${mlr_arg_global_data} \
    --init_lr=0.01 \
    --num_test_eval=20 --perform_test=false --num_batches_per_eval=10 --lambda=0 \
    --hostfile=${tmp_dir}/localserver \
    --train_file=${tmp_dir}/libsvm_access_log.txt \
+'
+
+if ${dryrun}
+then
+    echo "${command}"
+else
+    eval "${command}"
+fi
