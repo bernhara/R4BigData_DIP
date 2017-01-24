@@ -107,6 +107,11 @@ mkdir -p "${tmp_dir}"
 #
 
 
+#
+# generating
+# - ${tmp_dir}/libsvm_access_log.txt
+# - ${tmp_dir}/libsvm_access_log.txt.meta
+# - ${tmp_dir}/labels.txt
 "${HERE}/generateMLRLearningData.sh" ${tmp_dir}/libsvm_access_log.txt -l ${tmp_dir}/labels.txt
 
 # TODO: which args should be parametrized
