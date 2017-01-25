@@ -11,7 +11,7 @@ then
 fi
 
 # Globals
-: ${PETUUM_INSTALL_DIR:=/share/Petuum}
+: ${PETUUM_INSTALL_DIR:=/share/PLMS}
 : ${MLR_MAIN:="${PETUUM_INSTALL_DIR}/bosen/app/mlr/bin/mlr_main"}
 
 Usage ()
