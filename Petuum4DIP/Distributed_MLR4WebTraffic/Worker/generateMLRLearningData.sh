@@ -88,7 +88,7 @@ mkdir -p "${tmp_dir}"
 
 if [ ! -f "${squidGuard_conf}" ]
 then
-    "${generateSquidGuardConfig}"
+    "${generateSquidGuardConfig}" > "${squidGuard_conf}"
 fi
 
 
