@@ -57,7 +57,7 @@ fi
 
 ##############################################################################################
 
-: ${DIP_ROOT_DIR:="${HERE}/../.."}
+: ${DIP_ROOT_DIR:="${HERE}/../../.."}
 
 : ${rebuidFillSquidLogs:="${DIP_ROOT_DIR}/DataCollection/SquidLogsImport/rebuildFullSquidLogs.sh"}
 : ${translateAccessLogToSquidGuardInput:="${DIP_ROOT_DIR}/SquidGuardClassifier/translateAccessLogToSquidGuardInput.sh"}
