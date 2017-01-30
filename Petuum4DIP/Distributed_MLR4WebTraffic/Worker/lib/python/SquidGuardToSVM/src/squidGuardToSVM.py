@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+# coding: utf-8 
+
 # TdB
 import os
 import sys
@@ -118,11 +120,14 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
     web_request_analysis_dict = {}
 
     # analyse squidGuard input line
-    squidguard_tags_for_web_request = squidguardLine.split('&')
+    # we know (see squidGuard.conf) that we have 5 tags separated by &
+    # the last one (url=) may contain & within the url => it's the last tag
+    squidguard_tags_for_web_request = squidguardLine.split('&', maxsplit = 5)
 
     for squidguard_tag in squidguard_tags_for_web_request:
         tag_name_and_value_list = squidguard_tag.split ('=', maxsplit=1)
         tag_name_and_value_tuple = tuple (tag_name_and_value_list)
+
         tag_name, tag_value = tag_name_and_value_tuple
         web_request_analysis_dict[tag_name] = tag_value
     
@@ -224,13 +229,14 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     input_file_line_numbers = 0
     
     # load
-    with open (squidGuardFileName) as squidGuardOuputFile:
-        with open (squidAccessLogFileName) as squidAccessLogFile:
+    with open (squidGuardFileName, encoding = 'latin_1') as squidGuardOuputFile:
+        with open (squidAccessLogFileName, encoding = 'latin_1') as squidAccessLogFile:
             with open (libSVMFileName, 'w') as libSVMFile:
                 while True:
                                 
                     squidguardLine = squidGuardOuputFile.readline()
                     if not squidguardLine:
+                        # enf of file
                         break
                     
                     input_file_line_numbers += 1
