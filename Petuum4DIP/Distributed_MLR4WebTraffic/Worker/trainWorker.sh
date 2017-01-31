@@ -57,6 +57,11 @@ do
     worker_index="${list_index}"
 
     worker_hostname="${worker_specification%:*}"
+    if [ "${worker_hostname}" = "${worker_specification}" ]
+    then
+	Usage "Missing port in <worker specification>"
+    fi
+
     petuum_interworker_tcp_port="${worker_specification#*:}"
 
     petuum_workers_specification_list[${worker_index}]="'${list_index}' '${worker_hostname}' '${petuum_interworker_tcp_port}'"
