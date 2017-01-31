@@ -1,9 +1,48 @@
 #! /bin/bash
 
-: ${BLACKLIST_DIR:=BL}
+HERE=`dirname $0`
+CMD=`basename $0`
+
+ARGarray=( "$@" )
+
+if [ -r "${HERE}/${CMD}-config" ]
+then
+    . "${HERE}/${CMD}-config"
+fi
+
+: ${BLACKLIST_DIR:="${HERE}"}
+: ${SHALLALIST_BLACKLIST_DIR:="${BLACKLIST_DIR}/BL"}
+: ${SHALLALIST_SRC_ARCHIVE:="${HERE}/shallalist.tar.gz"}
+
+#
+# Manage tmp storage
+
+: ${remove_tmp:=true}
+: ${tmp_dir:=`mktemp -u -p "${HERE}/tmp"`}
+
+if ${remove_tmp}
+then
+    trap 'rm -rf "${tmp_dir}"' 0
+fi
+
+# import_logs_dir is supposed to exist
+mkdir -p "${tmp_dir}"
+
+######################################################################
+
+#
+# rebuild Black list folder and database from shallalist obtained from http://www.shallalist.de/Downloads/shallalist.tar.gz
+#
+
+if [ -d "${SHALLALIST_BLACKLIST_DIR}" ]
+then
+    mv "${SHALLALIST_BLACKLIST_DIR}" "${tmp_dir}"
+fi
+mkdir -p "${BLACKLIST_DIR}"
+tar zxf "${SHALLALIST_SRC_ARCHIVE}" -C "${BLACKLIST_DIR}"
 
 classe_dirs=`
-	cd "${BLACKLIST_DIR}" >/dev/null
+	cd "${SHALLALIST_BLACKLIST_DIR}" >/dev/null
 #	echo */
 	find . -type d
 `
@@ -29,18 +68,18 @@ do
     
 done
 
-dbhome=$(realpath "${BLACKLIST_DIR}")
+dbhome=$(realpath "${SHALLALIST_BLACKLIST_DIR}")
 
 echo "dbhome ${dbhome}"
 echo "logdir /tmp"
 
 for category in ${categories}
 do
-    if [ -f "${BLACKLIST_DIR}/${category}/domains" ]
+    if [ -f "${SHALLALIST_BLACKLIST_DIR}/${category}/domains" ]
     then
 	domains_clause="domainlist ${category}/domains"
     fi
-    if [ -f "${BLACKLIST_DIR}/${category}/urls" ]
+    if [ -f "${SHALLALIST_BLACKLIST_DIR}/${category}/urls" ]
     then
 	urls_clause="urllist ${category}/urls"
     fi
@@ -59,6 +98,6 @@ do
     echo -n " !${category}"
 done
 echo " none"
-echo "      redirect clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&targetgroup=%t&url=%u"
+echo "      redirect squidguard_client_ip_addr=%a&squidguard_domain_name=%n&squidguard_client_user_id=%i&squidguard_client_group=%s&squidguard_target_group=%t&squidguard_url=%u"
 echo "   }"
 echo "}"

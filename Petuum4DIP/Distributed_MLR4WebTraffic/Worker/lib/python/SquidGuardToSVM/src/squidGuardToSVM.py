@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+# coding: utf-8 
+
 # TdB
 import os
 import sys
@@ -8,7 +10,7 @@ import hashlib
 import argparse
 
 import logging
-logging.basicConfig (level=logging.ERROR)
+logging.basicConfig (level=logging.WARNING)
 
 #
 # Globals
@@ -18,6 +20,9 @@ _squidGuardCategories = []
 _feature_one_based = False
 _label_one_based = False
 _feature_dim = -1
+_squidguard_dummy_line = 'squidguard_client_ip_addr=192.168.1.1&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=none&squidguard_url=http://dummy 192.168.1.1/- - -'
+_squidguard_target_group_field_name = 'squidguard_target_group'
+
 
 def hashStringToLibSVMValue (string_to_encode):
     
@@ -113,16 +118,50 @@ _access_log_field_names = [
     'mime_type'
 ]
 
+
 def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
+    
+    #
+    # prevent against line which have not been correctly tagged by squidGuard
+    #
+#    logging.error('1')
+    if squidguardLine.find(_squidguard_target_group_field_name) == -1:
+        logging.warning("The following line has not been correctly classified by squidGuard:\n\t->{}\nCorrespong log is:\n\t->{}".format(squidguardLine, squidAccesLogLine))
+        squidguardLine = _squidguard_dummy_line
+#    logging.error('3')
     
     web_request_analysis_dict = {}
 
-    # analyse squidGuard input line
-    squidguard_tags_for_web_request = squidguardLine.split('&')
+    #
+    # analyze squidGuard input line
+    #
+    
+    # elements are separated by ' '
+    squidguardLine_elements_list = squidguardLine.split(' ')
+    squidguardLine_rewrite_result=squidguardLine_elements_list[0]
+    
+    
+    #
+    # url field is always placed at the end, because this field itself contains URL symbols like '&'
+    # which is is to separate the squidGuard fields (see squidGuard.conf)
+    #
+    url_field_index_in_squidguard_line = squidguardLine_rewrite_result.find ('squidguard_url=')
+        
+    if url_field_index_in_squidguard_line != -1:
+   
+        squidguardLine_substring_before_url = squidguardLine_rewrite_result[:url_field_index_in_squidguard_line - 1]
+        squidguardLine_substring_containing_url = squidguardLine_rewrite_result[url_field_index_in_squidguard_line:]
+        
+        squidguard_tags_for_web_request_list = squidguardLine_substring_before_url.split('&')
+        squidguard_tags_for_web_request_list.append(squidguardLine_substring_containing_url)
+    else:
+        # no "url' field found => no splitting problem
+        squidguard_tags_for_web_request_list = squidguardLine_rewrite_result.split('&')
 
-    for squidguard_tag in squidguard_tags_for_web_request:
+    for squidguard_tag in squidguard_tags_for_web_request_list:
         tag_name_and_value_list = squidguard_tag.split ('=', maxsplit=1)
         tag_name_and_value_tuple = tuple (tag_name_and_value_list)
+        
         tag_name, tag_value = tag_name_and_value_tuple
         web_request_analysis_dict[tag_name] = tag_value
     
@@ -176,12 +215,12 @@ def buildWebRequestToLibSVMLineFormater ():
 def webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat):
     
 
-    logging.debug ('squidGuard group: {}'.format(web_request_analysis_dict['targetgroup']))
+    logging.debug ('squidGuard group: {}'.format(web_request_analysis_dict[_squidguard_target_group_field_name]))
     
     libSVMLineData = {}
     
     # the label
-    category = web_request_analysis_dict['targetgroup']
+    category = web_request_analysis_dict[_squidguard_target_group_field_name]
     # get a "0 based" category index
     category_index = _squidGuardCategories.index(category)
     if _label_one_based:
@@ -224,13 +263,14 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     input_file_line_numbers = 0
     
     # load
-    with open (squidGuardFileName) as squidGuardOuputFile:
-        with open (squidAccessLogFileName) as squidAccessLogFile:
+    with open (squidGuardFileName, encoding = 'latin_1') as squidGuardOuputFile:
+        with open (squidAccessLogFileName, encoding = 'latin_1') as squidAccessLogFile:
             with open (libSVMFileName, 'w') as libSVMFile:
                 while True:
                                 
                     squidguardLine = squidGuardOuputFile.readline()
                     if not squidguardLine:
+                        # enf of file
                         break
                     
                     input_file_line_numbers += 1
@@ -313,7 +353,7 @@ def main():
         _label_one_based = False   
         
     if args.debug:
-        logging.basicConfig (level=logging.DEBUG)
+        logging.getLogger().setLevel (logging.DEBUG)
     
 
     buildCategoryTable (args.squidGuardConfigurationFile)

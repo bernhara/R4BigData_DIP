@@ -57,9 +57,10 @@ fi
 
 ##############################################################################################
 
-: ${DIP_ROOT_DIR:="${HERE}/../.."}
+: ${DIP_ROOT_DIR:="${HERE}/../../.."}
 
-: ${rebuidFillSquidLogs:="${DIP_ROOT_DIR}/DataCollection/SquidLogsImport/rebuildFullSquidLogs.sh"}
+: ${generateSquidGuardConfig:="${DIP_ROOT_DIR}/SquidGuardClassifier/generateSquidGuardConfig.sh"}
+: ${rebuidFullSquidLogs:="${DIP_ROOT_DIR}/DataCollection/SquidLogsImport/rebuildFullSquidLogs.sh"}
 : ${translateAccessLogToSquidGuardInput:="${DIP_ROOT_DIR}/SquidGuardClassifier/translateAccessLogToSquidGuardInput.sh"}
 : ${squidGuard_conf:="${DIP_ROOT_DIR}/SquidGuardClassifier/squidGuard.conf"}
 : ${squidGuard_cmd:="squidGuard -c ${squidGuard_conf}"}
@@ -85,7 +86,13 @@ mkdir -p "${tmp_dir}"
 #
 
 
-${rebuidFillSquidLogs} > "${tmp_dir}/access.log"
+if [ ! -f "${squidGuard_conf}" ]
+then
+    "${generateSquidGuardConfig}" > "${squidGuard_conf}"
+fi
+
+
+${rebuidFullSquidLogs} > "${tmp_dir}/access.log"
 
 cat "${tmp_dir}/access.log" | \
 ${translateAccessLogToSquidGuardInput} \ |
