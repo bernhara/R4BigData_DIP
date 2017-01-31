@@ -12,6 +12,10 @@ fi
 
 
 : ${WORKER_DEFAULT_INSTALL_DIR:=R4BigData_DIP/Petuum4DIP/Distributed_MLR4WebTraffic/Worker}
+: ${LOCAL_OUTPUT_DIR:="${HERE}/out"}
+
+: ${remonte_output_prefix:=/tmp/mlr_out}
+
 
 Usage ()
 {
@@ -89,8 +93,9 @@ then
     trap 'rm -rf "${tmp_dir}"' 0
 fi
 
-# import_logs_dir is supposed to exist
 mkdir -p "${tmp_dir}"
+
+mkdir -p "${LOCAL_OUTPUT_DIR}"
 
 #
 # Launch MLR on all workerd
@@ -137,7 +142,7 @@ build_worker_mlr_cmd () {
     fi
 
     local_worker_command="\
-${worker_ssh_remote_path_specification}/trainWorker.sh ${worker_index} ${worker_launcher_common_args} \
+${worker_ssh_remote_path_specification}/trainWorker.sh --output_prefix_file ${remonte_output_prefix} ${worker_index} ${worker_launcher_common_args} \
 "
 
     remote_command="ssh \
@@ -171,7 +176,7 @@ do
 	(
 	    ${launch_command}
 	    echo "$? ${worker_index} ${worker_ssh_hostname}">${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.exit_status
-	) 2>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stdout.log
+	) 2>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stderr.log  1>${tmp_dir}/worker-${worker_index}-${worker_ssh_hostname}.stdout.log &
 
     fi
 
@@ -180,6 +185,8 @@ done
 
 # wait for termination af all lauched workers
 wait
+
+one_has_failed=false
 
 # test if some failed
 exit_status_file_list=$( ls -1 ${tmp_dir}/worker-*.exit_status  2>/dev/null )
@@ -191,6 +198,9 @@ do
     woker_ssh_hostname=$3
     if [ "${exit_status}" -ne "0" ]
     then
+
+	one_has_failed=true
+
 	(
 	    echo "ERROR: worker #${worker_index} ($worker_ssh_hostname) FAILED"
 	    echo
@@ -208,3 +218,31 @@ do
 	) 1>&2
     fi
 done
+
+#
+# if none has failed, we get the generated weight file
+#
+
+# it is located on worker 0 (the first in the list)
+
+eval worker_specification_array=( ${petuum_workers_specification_list[0]} )
+worker_ssh_remote_user="${worker_specification_array[1]}"
+worker_ssh_hostname="${worker_specification_array[2]}"
+
+remote="${worker_ssh_hostname}:${remonte_output_prefix}*"
+
+if [ -n "${worker_ssh_remote_user}" ]
+then
+    remote="${worker_ssh_remote_user}@${remote}"
+fi
+
+command="scp \"${remote}\" \"${LOCAL_OUTPUT_DIR}\""
+if $dryrun
+then
+    echo "** would execute **: ${command}"
+else
+    if ! ${one_has_failed}
+    then
+	eval "${command}"
+    fi
+fi
