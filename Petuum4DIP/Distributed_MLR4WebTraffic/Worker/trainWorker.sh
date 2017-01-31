@@ -15,16 +15,17 @@ fi
 : ${MLR_MAIN:="${PETUUM_INSTALL_DIR}/bosen/app/mlr/bin/mlr_main"}
 : ${PARTITION_DEFAULT_SIZE_IN_PARTITIONED_MODE:=500}
 
-
 Usage ()
 {
     if [ -n "$1" ]
     then
 	echo "ERROR: $1" 1>&2
     fi
-    echo "Usage: ${CMD} [--dryrun] <this worker index> <worker specification> [<worker specification>]*" 1>&2
+    echo "Usage: ${CMD} [--dryrun] [--output_prefix_file <prefix for generated loss file>] <this worker index> <worker specification> [<worker specification>]*" 1>&2
     echo "with <worker specification> having the following form: <worker hostname>:<petuum interworker tcp port>" 1>&2
-    echo "NOTES: workers are indexed in appearing order (first specified worker has index 0)" 1>&2
+    echo "NOTES:" 1>&2
+    echo "\tworkers are indexed in appearing order (first specified worker has index 0)" 1>&2
+    echo "\torder of arguments is relevant" 1>&2
     exit 1
 }
 
@@ -38,6 +39,19 @@ dryrun=false
 if [ "$1" = "--dryrun" ]
 then
     dryrun=true
+    shift 1
+fi
+
+if [ "$1" = "--output_prefix_file" ]
+then
+    shift 1
+    output_prefix_file="$1"
+
+    if [ -z "${output_prefix_file}" ]
+    then
+	Usage "no argument provided to --output_prefix_file"
+    fi
+
     shift 1
 fi
 
@@ -195,6 +209,11 @@ fi
 
 # TODO: which args should be parametrized
 
+if [ -z "${output_prefix_file}" ]
+then
+    output_prefix_file="${tmp_dir}/rez"
+fi
+
 command='GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 "${MLR_MAIN}" \
    --num_comm_channels_per_client=1 \
@@ -204,7 +223,7 @@ command='GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
    --num_clients=${nb_workers} \
    --use_weight_file=false --weight_file= \
    --num_batches_per_epoch=10 --num_epochs=40 \
-   --output_file_prefix=${tmp_dir}/rez \
+   --output_file_prefix="${output_prefix_file}" \
    --lr_decay_rate=0.99 --num_train_eval=10000 \
    --global_data=${mlr_arg_global_data} \
    --init_lr=0.01 \
