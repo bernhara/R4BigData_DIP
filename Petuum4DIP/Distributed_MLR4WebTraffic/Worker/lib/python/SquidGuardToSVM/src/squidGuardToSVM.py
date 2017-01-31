@@ -21,6 +21,7 @@ _feature_one_based = False
 _label_one_based = False
 _feature_dim = -1
 _squidguard_dummy_line = 'squidguard_client_ip_addr=192.168.1.1&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=none&squidguard_url=http://dummy 192.168.1.1/- - -'
+_squidguard_target_group_field_name = 'squidguard_target_group'
 
 
 def hashStringToLibSVMValue (string_to_encode):
@@ -124,7 +125,7 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
     # prevent against line which have not been correctly tagged by squidGuard
     #
 #    logging.error('1')
-    if squidguardLine.find('squidguard_target_group=') == -1:
+    if squidguardLine.find(_squidguard_target_group_field_name) == -1:
         logging.warning("The following line has not been correctly classified by squidGuard:\n\t->{}\nCorrespong log is:\n\t->{}".format(squidguardLine, squidAccesLogLine))
         squidguardLine = _squidguard_dummy_line
 #    logging.error('3')
@@ -214,12 +215,12 @@ def buildWebRequestToLibSVMLineFormater ():
 def webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat):
     
 
-    logging.debug ('squidGuard group: {}'.format(web_request_analysis_dict['squidguard_target_group']))
+    logging.debug ('squidGuard group: {}'.format(web_request_analysis_dict[_squidguard_target_group_field_name]))
     
     libSVMLineData = {}
     
     # the label
-    category = web_request_analysis_dict['squidguard_target_group']
+    category = web_request_analysis_dict[_squidguard_target_group_field_name]
     # get a "0 based" category index
     category_index = _squidGuardCategories.index(category)
     if _label_one_based:
