@@ -13,6 +13,8 @@ fi
 # Globals
 : ${PETUUM_INSTALL_DIR:=/share/PLMS}
 : ${MLR_MAIN:="${PETUUM_INSTALL_DIR}/bosen/app/mlr/bin/mlr_main"}
+: ${PARTITION_DEFAULT_SIZE_IN_PARTITIONED_MODE:=500}
+
 
 Usage ()
 {
@@ -179,7 +181,7 @@ then
     globalDataFormatToWorkerLocalDataFormat \
 	"${tmp_dir}/libsvm_access_log.txt" \
 	${nb_workers} \
-	10 \
+	${PARTITION_DEFAULT_SIZE_IN_PARTITIONED_MODE} \
 	"${tmp_dir}/libsvm_access_log.txt.${this_worker_index}"
 	
     
