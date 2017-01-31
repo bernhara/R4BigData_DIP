@@ -84,14 +84,14 @@ fi
 globalDataFormatToWorkerLocalDataFormat ()
 {
     global_data_libsvm_file="$1"
-    num_clients="$2"
+    nb_workers="$2"
     local_sample_size="$3"
     local_data_libsvm_file="$4"
 
     global_data_libsvm_meta_file="$1.meta"
     local_data_libsvm_meta_file="$4.meta"
 
-    global_sample_size=$(( ${num_clients} * ${local_sample_size} ))
+    global_sample_size=$(( ${nb_workers} * ${local_sample_size} ))
 
     tmp_array=( $( grep 'num_train_this_partition' "${global_data_libsvm_meta_file}"  ) )
     global_data_num_train_this_partition=${tmp_array[1]}
@@ -150,6 +150,7 @@ mkdir -p "${tmp_dir}"
 # Launch MLR on all workerd
 #
 
+nb_workers=${#petuum_workers_specification_list[@]}
 
 #
 # generating
@@ -162,7 +163,7 @@ mkdir -p "${tmp_dir}"
 # SWITCH between single worker and distributed learning with _multiple workers_ and _split input data_
 #
 
-if [ ${#petuum_workers_specification_list[@]} -ge 2 ]
+if [ ${nb_workers} -ge 2 ]
 then
     # Distributed version
     partitioned_mode=true
@@ -177,7 +178,7 @@ then
     # Distributed version
     globalDataFormatToWorkerLocalDataFormat \
 	"${tmp_dir}/libsvm_access_log.txt" \
-	2 \
+	${nb_workers} \
 	10 \
 	"${tmp_dir}/libsvm_access_log.txt.${this_worker_index}"
 	
@@ -192,15 +193,13 @@ fi
 
 # TODO: which args should be parametrized
 
-num_clients=${#petuum_workers_specification_list[@]}
-
 command='GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 "${MLR_MAIN}" \
    --num_comm_channels_per_client=1 \
    --staleness=2 \
    --client_id="${this_worker_index}" \
    --num_app_threads=1 \
-   --num_clients=${num_clients} \
+   --num_clients=${nb_workers} \
    --use_weight_file=false --weight_file= \
    --num_batches_per_epoch=10 --num_epochs=40 \
    --output_file_prefix=${tmp_dir}/rez \
