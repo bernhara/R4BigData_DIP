@@ -98,6 +98,6 @@ do
     echo -n " !${category}"
 done
 echo " none"
-echo "      redirect clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&targetgroup=%t&url=%u"
+echo "      redirect squidguard_client_ip_addr=%a&squidguard_domain_name=%n&squidguard_client_user_id=%i&squidguard_client_group=%s&squidguard_target_group=%t&squidguard_url=%u"
 echo "   }"
 echo "}"
