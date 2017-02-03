@@ -129,8 +129,12 @@ def main():
     parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=str, dest="libSVMFile", required=True,
                         help='''The "LIB SVM" formated file, containing the classified content.
     The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
-    These 2 files can be used as input to Petuum's MRL''')    
-    parser.add_argument("-d", "--debug", action='store_true', dest="debug")
+    These 2 files can be used as input to Petuum's MRL''') 
+    parser.add_argument("--featureOneBased", action='store_true', dest="featureOneBased", 
+                        help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
+    parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
+                        help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
+    parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
 
     args = parser.parse_args()
     
