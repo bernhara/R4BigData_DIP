@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="org.python.pydev.debug.regularLaunchConfigurationType">
-<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/R4BigData_DIP/Petuum4DIP/Distributed_MLR4WebTraffic/lib/python/SquidGuardToSVM/src/squidGuardToSVM.py"/>
-</listAttribute>
-<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
-<listEntry value="1"/>
-</listAttribute>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="${workspace_loc:R4BigData_DIP/Petuum4DIP/Distributed_MLR4WebTraffic/lib/python/SquidGuardToSVM/src/squidGuardToSVM.py}"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_OTHER_WORKING_DIRECTORY" value="${workspace_loc:R4BigData_DIP/Petuum4DIP/Distributed_MLR4WebTraffic/lib/python/SquidGuardToSVM}"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="--squidAccessLogFile samples/input_test/access.log --squidGuardFile samples/input_test/squidGuardClassified_access_log.txt --libSVMFile samples/output/libsvm_access_log.txt --squidGuardConf samples/input_test/squidGuard.conf --categoriesDump samples/output/categories.txt --debug"/>
