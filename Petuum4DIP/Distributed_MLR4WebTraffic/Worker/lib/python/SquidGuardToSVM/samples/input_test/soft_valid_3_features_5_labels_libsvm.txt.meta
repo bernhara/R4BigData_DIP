@@ -1,0 +1,8 @@
+num_train_total: 3
+num_train_this_partition: 3
+feature_dim: 3
+num_labels: 5
+format: libsvm
+feature_one_based: 0
+label_one_based: 0
+snappy_compressed: 0
