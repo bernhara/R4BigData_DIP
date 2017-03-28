@@ -13,6 +13,7 @@ fi
 # Globals
 : ${PETUUM_INSTALL_DIR:=/share/PLMS}
 : ${MLR_MAIN:="${PETUUM_INSTALL_DIR}/bosen/app/mlr/bin/mlr_main"}
+: ${PARTITION_DEFAULT_SIZE_IN_PARTITIONED_MODE:=500}
 
 Usage ()
 {
@@ -20,9 +21,11 @@ Usage ()
     then
 	echo "ERROR: $1" 1>&2
     fi
-    echo "Usage: ${CMD} [--dryrun] <this worker index> <worker specification> [<worker specification>]*" 1>&2
+    echo "Usage: ${CMD} [--dryrun] [--output_prefix_file <prefix for generated loss file>] <this worker index> <worker specification> [<worker specification>]*" 1>&2
     echo "with <worker specification> having the following form: <worker hostname>:<petuum interworker tcp port>" 1>&2
-    echo "NOTES: workers are indexed in appearing order (first specified worker has index 0)" 1>&2
+    echo "NOTES:" 1>&2
+    echo "\tworkers are indexed in appearing order (first specified worker has index 0)" 1>&2
+    echo "\torder of arguments is relevant" 1>&2
     exit 1
 }
 
@@ -36,6 +39,19 @@ dryrun=false
 if [ "$1" = "--dryrun" ]
 then
     dryrun=true
+    shift 1
+fi
+
+if [ "$1" = "--output_prefix_file" ]
+then
+    shift 1
+    output_prefix_file="$1"
+
+    if [ -z "${output_prefix_file}" ]
+    then
+	Usage "no argument provided to --output_prefix_file"
+    fi
+
     shift 1
 fi
 
@@ -57,6 +73,11 @@ do
     worker_index="${list_index}"
 
     worker_hostname="${worker_specification%:*}"
+    if [ "${worker_hostname}" = "${worker_specification}" ]
+    then
+	Usage "Missing port in <worker specification>"
+    fi
+
     petuum_interworker_tcp_port="${worker_specification#*:}"
 
     petuum_workers_specification_list[${worker_index}]="'${list_index}' '${worker_hostname}' '${petuum_interworker_tcp_port}'"
@@ -79,14 +100,14 @@ fi
 globalDataFormatToWorkerLocalDataFormat ()
 {
     global_data_libsvm_file="$1"
-    num_clients="$2"
+    nb_workers="$2"
     local_sample_size="$3"
     local_data_libsvm_file="$4"
 
     global_data_libsvm_meta_file="$1.meta"
     local_data_libsvm_meta_file="$4.meta"
 
-    global_sample_size=$(( ${num_clients} * ${local_sample_size} ))
+    global_sample_size=$(( ${nb_workers} * ${local_sample_size} ))
 
     tmp_array=( $( grep 'num_train_this_partition' "${global_data_libsvm_meta_file}"  ) )
     global_data_num_train_this_partition=${tmp_array[1]}
@@ -145,6 +166,7 @@ mkdir -p "${tmp_dir}"
 # Launch MLR on all workerd
 #
 
+nb_workers=${#petuum_workers_specification_list[@]}
 
 #
 # generating
@@ -157,7 +179,7 @@ mkdir -p "${tmp_dir}"
 # SWITCH between single worker and distributed learning with _multiple workers_ and _split input data_
 #
 
-if [ ${#petuum_workers_specification_list[@]} -ge 2 ]
+if [ ${nb_workers} -ge 2 ]
 then
     # Distributed version
     partitioned_mode=true
@@ -172,8 +194,8 @@ then
     # Distributed version
     globalDataFormatToWorkerLocalDataFormat \
 	"${tmp_dir}/libsvm_access_log.txt" \
-	2 \
-	10 \
+	${nb_workers} \
+	${PARTITION_DEFAULT_SIZE_IN_PARTITIONED_MODE} \
 	"${tmp_dir}/libsvm_access_log.txt.${this_worker_index}"
 	
     
@@ -187,7 +209,10 @@ fi
 
 # TODO: which args should be parametrized
 
-num_clients=${#petuum_workers_specification_list[@]}
+if [ -z "${output_prefix_file}" ]
+then
+    output_prefix_file="${tmp_dir}/rez"
+fi
 
 command='GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
 "${MLR_MAIN}" \
@@ -195,10 +220,10 @@ command='GLOG_logtostderr=true GLOG_v=-1 GLOG_minloglevel=0 \
    --staleness=2 \
    --client_id="${this_worker_index}" \
    --num_app_threads=1 \
-   --num_clients=${num_clients} \
+   --num_clients=${nb_workers} \
    --use_weight_file=false --weight_file= \
    --num_batches_per_epoch=10 --num_epochs=40 \
-   --output_file_prefix=${tmp_dir}/rez \
+   --output_file_prefix="${output_prefix_file}" \
    --lr_decay_rate=0.99 --num_train_eval=10000 \
    --global_data=${mlr_arg_global_data} \
    --init_lr=0.01 \
