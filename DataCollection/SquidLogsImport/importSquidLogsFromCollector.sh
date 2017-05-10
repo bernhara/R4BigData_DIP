@@ -12,6 +12,7 @@ fi
 # script must be run here (for ssh config path)
 #
 : ${import_logs_dir:=${HERE}/ClonedLogs/imported}
+: ${remote_source_dir="CollectorIn/${my_name}"
 
 : ${collector_ssh_remote_host_spec:="log-collector-wan"}
 
@@ -26,13 +27,6 @@ fi
 if [ -z "${my_name}" ]
 then
     echo "ERROR: shell variable \"my_name\" undefinded. See ${HERE}/${CMD}-config file." 1>&2
-    exit 1
-fi
-
-if [ -z "${remote_source_dir}" ]
-then
-    echo "ERROR: shell variable \"remote_source_dir\" undefined.
-	You should provide an existing folder on logs collector (eg. using the $HERE/myId.sh)" 1>&2
     exit 1
 fi
 
