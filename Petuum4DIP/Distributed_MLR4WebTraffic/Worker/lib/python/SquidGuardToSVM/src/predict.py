@@ -280,29 +280,15 @@ void Softmax(std::vector<float>* vec) {
 }
 '''
 
-#import numpy
-def softmax_numpy(x, expected):
-    
-    np_x = numpy.array (x)
-    np_expected = numpy.array (expected)
-    
-    e_x = numpy.exp(np_x - numpy.max(np_x))
-    softmax_result = e_x / e_x.sum(axis=0)
-    
-    print (softmax_result)
-    
-       
-    return (softmax_result)
-
 import math
 import functools
 
-def LogSumVec(value_list):
+def LogSumVec(vec_as_list):
     
-    sum = functools.reduce(lambda x, y: x+y, value_list)
+    sum = functools.reduce(lambda x, y: x+y, vec_as_list)
     return sum
 
-def softmax_math(value_list, expected):
+def Softmax(vec_as_list):
     z = [1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0]
     z_exp = [math.exp(i) for i in z]  
     print(z_exp)  # Result: [2.72, 7.39, 20.09, 54.6, 2.72, 7.39, 20.09] 
@@ -311,8 +297,16 @@ def softmax_math(value_list, expected):
     softmax = [round(i / sum_z_exp, 3) for i in z_exp]
     print(softmax)  # Result: [0.024, 0.064, 0.175, 0.475, 0.024, 0.064, 0.175]
     
-    kCutoff = 1e-15
-    z_exp = [math.exp(i) for i in z]
+    lsum = LogSumVec(vec_as_list)
+    softmax_vector_as_list = []
+    for i, val_for_i in enumerate(vec_as_list):
+        softmax_vector_item =  math.exp(val_for_i - lsum)
+        if softmax_vector_item > 1:
+            softmax_vector_item = 1
+        softmax_vector_as_list[i] = softmax_vector_item
+    
+    return softmax_vector_as_list
+
     
     
 
