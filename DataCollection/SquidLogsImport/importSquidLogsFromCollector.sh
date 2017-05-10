@@ -12,7 +12,7 @@ fi
 # script must be run here (for ssh config path)
 #
 : ${import_logs_dir:=${HERE}/ClonedLogs/imported}
-: ${remote_source_dir="CollectorIn/${my_name}"
+: ${remote_source_dir:="CollectorIn/${my_name}"}
 
 : ${collector_ssh_remote_host_spec:="log-collector-wan"}
 
