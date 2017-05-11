@@ -480,20 +480,35 @@ l2 = [0.0426195, 0.0117173, 0.0117173, 0.0117173, 0.0117173, 0.0118334, 0.011717
 
 class moduleTestCases (unittest.TestCase):
     
-    def floatAsRoundedString (self, f):
-        rounded_string_for_f = '%.14f' % f
+    def floatTruncatedString (self, f, n_digits = 14):
+        
+        # float formating function rounds the value
+        # use string manipulation instead
+        
+        f_as_string = str(float(f))
+        dot_position = f_as_string.index('.')
+        (natural_part, decimal_part) = f_as_string.split(sep='.')
+        
+        str_containing_only_zeros = ''.zfill(20) # assert that n_digits is < than 20
+        decimal_part += str_containing_only_zeros
+        # truncate decimal_part
+        decimal_part = decimal_part[:n_digits]
+
+        rounded_string_for_f = natural_part + '.' + decimal_part
         return rounded_string_for_f
     
      
     def test_LogSumVec (self):
+        tested_precision = 3
+        
         sample = [2.32699, 2.70564, 0.70979, -1.65623, -1.32633, -0.59962, -2.18235]
         sample_LogSumVec = 3.34482
         
         sum = LogSumVec(sample)
         diff = (sum - sample_LogSumVec)
         
-        diff_as_string = self.floatAsRoundedString (diff)
-        zero_as_string = self.floatAsRoundedString (0.0)
+        diff_as_string = self.floatTruncatedString (diff, tested_precision)
+        zero_as_string = self.floatTruncatedString (0.0, tested_precision)
         self.assertEqual(diff_as_string, zero_as_string, 'non zero difference with sample')
         '''             
         I0511 16:10:04.879371 26773 mlr_sgd_solver.cpp:147] RAPH: 2.32699
@@ -507,13 +522,14 @@ class moduleTestCases (unittest.TestCase):
         '''  
         
     def test_Softmax (self):
+        tested_precision = 3
         
         sample = [0.629833, 3.12866, -0.415136, -1.54497, 0.300126, -0.132952, -1.98521]
         ref_result = [0.0671654, 0.817307, 0.0236235, 0.00763237, 0.0483034, 0.0313251, 0.00491428]
         
         computed_result = Softmax(sample)    
         for r,c in zip(ref_result, computed_result):
-            self.assertEqual(self.floatAsRoundedString(r), self.floatAsRoundedString(c), 'Softmax did not compute equivalent values')
+            self.assertEqual(self.floatTruncatedString(r, tested_precision), self.floatTruncatedString(c, tested_precision), 'Softmax did not compute equivalent values')
             
    
     
