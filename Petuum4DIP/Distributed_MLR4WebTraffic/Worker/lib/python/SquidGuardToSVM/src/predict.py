@@ -283,26 +283,87 @@ void Softmax(std::vector<float>* vec) {
 import math
 import functools
 
+def LogSum(log_a, log_b):
+    if (log_a < log_b):
+        r = log_b + fastlog(1 + fastexp(log_a - log_b))
+    else:   
+        r = log_a + fastlog(1 + fastexp(log_b-log_a))
+        
+    return r
+
 def LogSumVec(vec_as_list):
     
-    sum = functools.reduce(lambda x, y: x+y, vec_as_list)
+    # FIXME: remove bas code
+    #!! sum = functools.reduce(lambda x, y: x+y, vec_as_list)
+
+    sum = vec_as_list[0]
+    for i in range(1, len(vec_as_list)):
+        sum = LogSum(sum, vec_as_list[i])
+        
     return sum
 
+'''
+float LogSum(float log_a, float log_b) {
+  return (log_a < log_b) ? log_b + fastlog(1 + fastexp(log_a - log_b)) :
+    log_a + fastlog(1 + fastexp(log_b-log_a));
+}
+
+float LogSumVec(const std::vector<float>& logvec) {
+        float sum = 0.;
+        sum = logvec[0];
+        for (int i = 1; i < logvec.size(); ++i) {
+                sum = LogSum(sum, logvec[i]);
+        }
+        return sum;
+}
+'''
+
+
+
+def fastpow2 (p):
+    r = math.pow(2.0, p)
+    return r
+
+
+def fastexp (p):
+  return fastpow2 (1.442695040 * p)
+
+
+'''
+fastlog2 (float x)
+{
+  union { float f; uint32_t i; } vx = { x };
+  union { uint32_t i; float f; } mx = { (vx.i & 0x007FFFFF) | 0x3f000000 };
+  float y = vx.i;
+  y *= 1.1920928955078125e-7f;
+
+  return y - 124.22551499f
+           - 1.498030302f * mx.f
+           - 1.72587999f / (0.3520887068f + mx.f);
+}
+
+static inline float
+fastlog (float x)
+{
+  return 0.69314718f * fastlog2 (x);
+}
+'''
+
+def fastlog2 (x):
+    r = math.log(x, 2)
+    return (r)
+
+def fastlog (x):
+    return 0.69314718 * fastlog2 (x)
+
 def Softmax(vec_as_list):
-    z = [1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0]
-    z_exp = [math.exp(i) for i in z]  
-    print(z_exp)  # Result: [2.72, 7.39, 20.09, 54.6, 2.72, 7.39, 20.09] 
-    sum_z_exp = sum(z_exp)  
-    print(sum_z_exp)  # Result: 114.98 
-    softmax = [round(i / sum_z_exp, 3) for i in z_exp]
-    print(softmax)  # Result: [0.024, 0.064, 0.175, 0.475, 0.024, 0.064, 0.175]
     
     lsum = LogSumVec(vec_as_list)
-    softmax_vector_as_list = []
+    softmax_vector_as_list = [0.0 for _ in vec_as_list]
     for i, val_for_i in enumerate(vec_as_list):
-        softmax_vector_item =  math.exp(val_for_i - lsum)
+        softmax_vector_item =  fastexp(val_for_i - lsum)
         if softmax_vector_item > 1:
-            softmax_vector_item = 1
+            softmax_vector_item = 1.0
         softmax_vector_as_list[i] = softmax_vector_item
     
     return softmax_vector_as_list
@@ -423,16 +484,38 @@ class moduleTestCases (unittest.TestCase):
         rounded_string_for_f = '%.14f' % f
         return rounded_string_for_f
     
+     
     def test_LogSumVec (self):
-        sample = [0.1, 0.2, 0.3, -0.5]
-        sample_LogSumVec = 0.1
+        sample = [2.32699, 2.70564, 0.70979, -1.65623, -1.32633, -0.59962, -2.18235]
+        sample_LogSumVec = 3.34482
+        
         sum = LogSumVec(sample)
         diff = (sum - sample_LogSumVec)
         
         diff_as_string = self.floatAsRoundedString (diff)
         zero_as_string = self.floatAsRoundedString (0.0)
         self.assertEqual(diff_as_string, zero_as_string, 'non zero difference with sample')
-       
+        '''             
+        I0511 16:10:04.879371 26773 mlr_sgd_solver.cpp:147] RAPH: 2.32699
+        I0511 16:10:04.879374 26773 mlr_sgd_solver.cpp:147] RAPH: 2.70564
+        I0511 16:10:04.879376 26773 mlr_sgd_solver.cpp:147] RAPH: 0.70979
+        I0511 16:10:04.879379 26773 mlr_sgd_solver.cpp:147] RAPH: -1.65623
+        I0511 16:10:04.879381 26773 mlr_sgd_solver.cpp:147] RAPH: -1.32633
+        I0511 16:10:04.879384 26773 mlr_sgd_solver.cpp:147] RAPH: -0.59962
+        I0511 16:10:04.879386 26773 mlr_sgd_solver.cpp:147] RAPH: -2.18235
+        I0511 16:10:04.879390 26773 math_util.cpp:59] RAPH: lsum = 3.34482
+        '''  
+        
+    def test_Softmax (self):
+        
+        sample = [0.629833, 3.12866, -0.415136, -1.54497, 0.300126, -0.132952, -1.98521]
+        ref_result = [0.0671654, 0.817307, 0.0236235, 0.00763237, 0.0483034, 0.0313251, 0.00491428]
+        
+        computed_result = Softmax(sample)    
+        for r,c in zip(ref_result, computed_result):
+            self.assertEqual(self.floatAsRoundedString(r), self.floatAsRoundedString(c), 'Softmax did not compute equivalent values')
+            
+   
     
 
 
