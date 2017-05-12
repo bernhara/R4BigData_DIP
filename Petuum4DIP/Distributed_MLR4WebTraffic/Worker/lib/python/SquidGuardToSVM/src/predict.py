@@ -293,7 +293,7 @@ def LogSum(log_a, log_b):
 
 def LogSumVec(vec_as_list):
     
-    # FIXME: remove bas code
+    # FIXME: remove bad code
     #!! sum = functools.reduce(lambda x, y: x+y, vec_as_list)
 
     sum = vec_as_list[0]
@@ -368,6 +368,56 @@ def Softmax(vec_as_list):
     
     return softmax_vector_as_list
 
+
+'''
+std::vector<float> MLRSGDSolver::Predict(const petuum::ml::AbstractFeature<float>& feature) const
+{
+    std::vector<float> y_vec(num_labels_);
+
+#ifdef RAPH
+    LOG(INFO) << "RAPH: " << "MLRSGDSolver::Predict for feature: " << feature.ToString();
+#endif
+
+    for (int i = 0; i < num_labels_; ++i) {
+      y_vec[i] = FeatureDotProductFun_(feature, w_cache_[i]);
+#ifdef RAPH
+      LOG(INFO) << "RAPH: "<< "num_label = " << i ;
+      LOG(INFO) << "RAPH: "<< "y_vec[" << i << "] = " << y_vec[i];
+      LOG(INFO) << "RAPH: "<< "w_cache_[" << i << "] = " << w_cache_[i].ToString();
+#endif
+    }
+    LOG(INFO) << "y_vec for all labels: ";
+    for (const auto i: y_vec) {
+      LOG(INFO) << "RAPH: " << i;
+    }
+    petuum::ml::Softmax(&y_vec);
+    LOG(INFO) << "y_vec after SoftMax: ";
+    for (const auto i: y_vec) {
+      LOG(INFO) << "RAPH: " << i;
+    }
+
+    return y_vec;
+  }
+
+'''
+
+
+
+def SparseDenseFeatureDotProduct(f1_feature_dict, f2_feature_dict):
+    
+    sum = 0.0
+    for f1_key, f1_value in f1_feature_dict.items():
+        f2_value = f2_feature_dict.get(f1_key)
+        if f2_value:
+            factor = f1_value * f2_value
+            sum += factor
+       
+    return (sum)
+
+
+def Predict (attribute_dict, petuum_mlr_computed_label_weights):
+    pass
+    
     
     
 
@@ -510,17 +560,7 @@ class moduleTestCases (unittest.TestCase):
         diff_as_string = self.floatTruncatedString (diff, tested_precision)
         zero_as_string = self.floatTruncatedString (0.0, tested_precision)
         self.assertEqual(diff_as_string, zero_as_string, 'non zero difference with sample')
-        '''             
-        I0511 16:10:04.879371 26773 mlr_sgd_solver.cpp:147] RAPH: 2.32699
-        I0511 16:10:04.879374 26773 mlr_sgd_solver.cpp:147] RAPH: 2.70564
-        I0511 16:10:04.879376 26773 mlr_sgd_solver.cpp:147] RAPH: 0.70979
-        I0511 16:10:04.879379 26773 mlr_sgd_solver.cpp:147] RAPH: -1.65623
-        I0511 16:10:04.879381 26773 mlr_sgd_solver.cpp:147] RAPH: -1.32633
-        I0511 16:10:04.879384 26773 mlr_sgd_solver.cpp:147] RAPH: -0.59962
-        I0511 16:10:04.879386 26773 mlr_sgd_solver.cpp:147] RAPH: -2.18235
-        I0511 16:10:04.879390 26773 math_util.cpp:59] RAPH: lsum = 3.34482
-        '''  
-        
+         
     def test_Softmax (self):
         tested_precision = 3
         
@@ -531,8 +571,22 @@ class moduleTestCases (unittest.TestCase):
         for r,c in zip(ref_result, computed_result):
             self.assertEqual(self.floatTruncatedString(r, tested_precision), self.floatTruncatedString(c, tested_precision), 'Softmax did not compute equivalent values')
             
-   
-    
+    def test_SparseDenseFeatureDotProduct(self):
+        tested_precision = 4
+        
+        v1_sample = {0:-0.722766, 1:1.6205, 2:0.12016, 3:-0.0631851, 4:-0.761921, 5:-0.922334, 6:-0.97684, 7:-0.269095, 8:0.743925, 9:-0.654204, 12:1, 44:1}
+        v2_sample = {0:1.59727, 1:0.0593455, 2:-0.0893879, 3:-0.151879, 4:-0.210145, 5:-0.197497, 6:-0.173927, 7:-0.326345, 8:0.0456448, 9:0.166405, 10:2.36239, 11:0.521288, 12:1.84793, 13:-0.031775, 14:-0.00115621, 15:-0.0904455, 16:-0.00524351, 17:-0.171253, 18:-0.00025415, 19:-0.0118456, 20:-0.0842596, 21:0, 22:0.260991, 23:0.0506531, 24:-0.0482705, 25:0.0425302, 26:0.474681, 27:0, 28:0, 29:-0.00536855, 30:-0.0630568, 31:-0.0276387, 32:-0.046064, 33:0.556238, 34:0, 35:1.04189, 36:1.36368, 37:0.0144527, 38:0, 39:-0.220127, 40:0, 41:0, 42:0.887994, 43:0.320543, 44:1.0134, 45:0.339152, 46:0.635149, 47:-0.114862, 48:0.137085, 49:0, 50:0, 51:-0.352742, 52:-0.585151, 53:-0.610863}
+        ref_result = 2.32699
+        
+        computed_result = SparseDenseFeatureDotProduct(v1_sample, v2_sample)
+        self.assertEqual(self.floatTruncatedString (computed_result, tested_precision),
+                         self.floatTruncatedString (ref_result, tested_precision))
+        # commutative computation
+        computed_result = SparseDenseFeatureDotProduct(v2_sample, v1_sample)
+        self.assertEqual(self.floatTruncatedString (computed_result, tested_precision),
+                         self.floatTruncatedString (ref_result, tested_precision))        
+        
+  
 
 
 
