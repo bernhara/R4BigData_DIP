@@ -211,6 +211,16 @@ def dict_vector_to_list_vector (dict_vector, one_based=False):
             
     return list_vector
 
+def list_vector_to_dict_vector (list_vector, one_based=False):
+    
+    dict_vector = {}
+    for i in range (len(list_vector)):
+        elem = list_vector[i]
+        if elem != 0.0:
+            dict_vector[i] = elem
+            
+    return dict_vector
+    
 class moduleTestCases (unittest.TestCase):
     
     def floatTruncatedString (self, f, n_digits = 14):
@@ -252,6 +262,27 @@ class moduleTestCases (unittest.TestCase):
         computed_result = dict_vector_to_list_vector(sample)    
         for r,c in zip(ref_result, computed_result):
             self.assertEqual(r, c, 'dict_vector_to_list_vector')
+            
+    def test_list_vector_to_dict_vector (self):
+
+        sample = [
+            0.629833, #0
+            3.12866, #1
+            0.300126, #2
+            0.0, #3
+            0.0, #4
+            -0.415136, #5
+            0.0, #6
+            0.0, #7
+            -1.98521, #8
+            -0.132952, #9
+            0.0, #10
+            -1.54497, #11
+        ]
+        ref_result = {0:0.629833, 1:3.12866, 5:-0.415136, 11:-1.54497, 2:0.300126, 9:-0.132952, 8:-1.98521}        
+        
+        computed_result = list_vector_to_dict_vector(sample) 
+        self.assertEqual(ref_result, computed_result)
 
      
     def test_LogSumVec (self):
