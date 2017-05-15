@@ -386,11 +386,10 @@ class moduleTestCases (unittest.TestCase):
                          self.floatTruncatedString (ref_result, tested_precision))
         
     def test_Predict (self):
-        '''
-
-        '''
-        
         tested_precision = 3
+        
+        # data copied from a Petuum MLR run
+        # =================================
         
         w_cache_ = {}
         y_vec = {}
@@ -426,6 +425,7 @@ class moduleTestCases (unittest.TestCase):
         w_cache_[6] = { 0:2.169, 1:-0.0386469, 2:-0.187937, 3:-0.0486434, 4:-0.232442, 5:0.249379, 6:-0.175115, 7:-0.374052, 8:0.0172173, 9:0.286413, 10:-1.14096, 11:-0.599187, 12:-0.0571573, 13:-0.051879, 14:-0.00272957, 15:-0.0325815, 16:-0.00674746, 17:-0.0457624, 18:-0.000694955, 19:-0.0186994, 20:-0.0133817, 21:0, 22:-0.00863092, 23:-0.0932004, 24:-0.0810231, 25:-0.140895, 26:-0.0914675, 27:0, 28:0, 29:-0.00198982, 30:-0.0113531, 31:-0.0034718, 32:-0.105409, 33:-0.103993, 34:0, 35:-0.481471, 36:-0.547005, 37:-0.460263, 38:0, 39:-0.0402379, 40:0, 41:0, 42:-0.323404, 43:-0.243114, 44:-0.52065, 45:-0.411668, 46:-0.573006, 47:-0.0666031, 48:-0.100697, 49:0, 50:0, 51:0.910116, 52:0.914921, 53:0.855931 }
         
         ref_result = { 0:0.0840387,  1:0.875732,  2:0.0282205,  3:0.00296929,  4:0.00167768,  5:0.00701246,  6:0.000498008 }
+        # =================================        
         
         input_weight_sparse_matrix = w_cache_
        
@@ -436,11 +436,7 @@ class moduleTestCases (unittest.TestCase):
             ref_result_item = ref_result[label]
             self.assertEqual(self.floatTruncatedString(computed_result_item, tested_precision), self.floatTruncatedString(ref_result_item, tested_precision), 'Predict did not compute equivalent values for label %s' % label)
         
-        
-        
-        
-        
-            
+           
         
 if __name__ == '__main__':
     pass
