@@ -144,7 +144,7 @@ float SparseDenseFeatureDotProduct(const AbstractFeature<float>& f1,
 # =======================================================================================================
 
 
-def Predict (feature_dict_sparse_vector, weigth_dict_table_sparse_matrix, one_based=False):
+def Predict (feature_dict_sparse_vector, weigth_dict_table_sparse_matrix, one_based):
     """Implements C++ function:
 
 std::vector<float> MLRSGDSolver::Predict(const petuum::ml::AbstractFeature<float>& feature) const
@@ -179,20 +179,22 @@ std::vector<float> MLRSGDSolver::Predict(const petuum::ml::AbstractFeature<float
     
     FeatureDotProductFun_ = SparseDenseFeatureDotProduct
     
-    product_vector_dict = {}
+    product_sparse_vector = {}
     
     for label in weigth_dict_table_sparse_matrix.keys():
-        weights_dict_for_this_label = weigth_dict_table[label]
-        product_for_this_label = FeatureDotProductFun_ (feature_dict, weights_dict_for_this_label)
-        product_vector_dict[label] = product_for_this_label
         
-    dense_product_vector_dict = dict_vector_to_list_vector(dict_vector, one_based)
-    dense_softmaxed_product_vector_dict = Softmax (dense_product_vector_dict)
-    sparse_softmaxed_product_vector_dict = list_vector_to_dict_vector(dense_softmaxed_product_vector_dict, one_based)
+        weights_dict_for_this_label = weigth_dict_table_sparse_matrix[label]
+        
+        product_for_this_label = FeatureDotProductFun_ (feature_dict_sparse_vector, weights_dict_for_this_label)
+        product_sparse_vector[label] = product_for_this_label
+        
+    product_dense_vector = dict_vector_to_list_vector(product_sparse_vector, one_based)
+    softmaxed_product_dense_vector = Softmax (product_dense_vector)
+    softmaxed_product_sparse_vector = list_vector_to_dict_vector(softmaxed_product_dense_vector, one_based)
     
-    return sparse_softmaxed_product_vector_dict
+    return softmaxed_product_sparse_vector
 
-def dict_vector_to_list_vector (dict_vector, one_based=False):
+def dict_vector_to_list_vector (dict_vector, one_based):
     
     keys = dict_vector.keys()
     greatest_index = max(keys)
@@ -213,7 +215,7 @@ def dict_vector_to_list_vector (dict_vector, one_based=False):
             
     return list_vector
 
-def list_vector_to_dict_vector (list_vector, one_based=False):
+def list_vector_to_dict_vector (list_vector, one_based):
     
     dict_vector = {}
     
@@ -393,7 +395,7 @@ class moduleTestCases (unittest.TestCase):
         w_cache_ = {}
         y_vec = {}
         
-        input_data_for_prediction = { 0:-0.747768, 1:-0.273881, 2:1.58879, 3:-0.985321, 4:-0.436021, 5:0.5367, 6:1.52596, 7:-0.673748, 8:-1.94748, 9:-0.158051, 10:1, 42:1 }
+        input_data_for_prediction_sparse_vector = { 0:-0.747768, 1:-0.273881, 2:1.58879, 3:-0.985321, 4:-0.436021, 5:0.5367, 6:1.52596, 7:-0.673748, 8:-1.94748, 9:-0.158051, 10:1, 42:1 }
         
         y_vec[0] = 1.94323
         
@@ -424,8 +426,10 @@ class moduleTestCases (unittest.TestCase):
         w_cache_[6] = { 0:2.169, 1:-0.0386469, 2:-0.187937, 3:-0.0486434, 4:-0.232442, 5:0.249379, 6:-0.175115, 7:-0.374052, 8:0.0172173, 9:0.286413, 10:-1.14096, 11:-0.599187, 12:-0.0571573, 13:-0.051879, 14:-0.00272957, 15:-0.0325815, 16:-0.00674746, 17:-0.0457624, 18:-0.000694955, 19:-0.0186994, 20:-0.0133817, 21:0, 22:-0.00863092, 23:-0.0932004, 24:-0.0810231, 25:-0.140895, 26:-0.0914675, 27:0, 28:0, 29:-0.00198982, 30:-0.0113531, 31:-0.0034718, 32:-0.105409, 33:-0.103993, 34:0, 35:-0.481471, 36:-0.547005, 37:-0.460263, 38:0, 39:-0.0402379, 40:0, 41:0, 42:-0.323404, 43:-0.243114, 44:-0.52065, 45:-0.411668, 46:-0.573006, 47:-0.0666031, 48:-0.100697, 49:0, 50:0, 51:0.910116, 52:0.914921, 53:0.855931 }
         
         ref_result = { 0:0.0840387,  1:0.875732,  2:0.0282205,  3:0.00296929,  4:0.00167768,  5:0.00701246,  6:0.000498008 }
+        
+        input_weight_sparse_matrix = w_cache_
        
-        predicted_labelization = Predict (input_data_for_prediction_sparse_vector, w_cache_sparse_matrix, on_based=False)
+        predicted_labelization = Predict (input_data_for_prediction_sparse_vector, input_weight_sparse_matrix, one_based=False)
         
         for label in ref_result.keys():
             computed_result_item = predicted_labelization[label]
