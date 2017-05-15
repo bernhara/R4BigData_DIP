@@ -78,44 +78,31 @@ def labeled_libsvm_vector_to_label_and_dict (labeled_libsvm_line, label_one_base
    
     return (label, attribute_weigth_dict)
 
-def libsvm_data_scalar_vector_product (v1, v2):
-    
-    product = 0.0
-    for v1_key, v1_value in v1.items():
-        v2_value = v2.get(v1_key)
-        if v2_value:
-            factor = v1_value * v2_value
-            product += factor
-       
-    return (product)
-
-
-
 
 def predict_label_index (attribute_dict, petuum_mlr_computed_label_weights):
     
+    #prepare data for Petuum emulation lib
+    list_of_labels_with_a_value = {label_index for label_index in range (0, nb_labels + 1) if petuum_mlr_computed_label_weights.haskeys(label_index)}
+        
+    weight_sparse_matrix = {}
+    for label_index in list_of_labels_with_a_value:
+         weight_sparse_matrix[label_index] = petuum_mlr_computed_label_weights[label_index]
+
+    # FIXME: only feature_one_based is used => confusing        
+    predicted_labelization_sparse_vector = petuumEmulationLib.Predict (input_data_for_prediction_sparse_vector,
+                                                                       input_weight_sparse_matrix,
+                                                                       one_based=_feature_one_based)
     
-    
-    predicted_labelization = petuumEmulationLib.Predict (input_data_for_prediction_sparse_vector, input_weight_sparse_matrix, one_based=False)
-    
-    nb_labels = petuum_mlr_computed_label_weights["num_labels"]
-      
-    computed_factor_dict = {}
-    for label_index in range (nb_labels):
-            
-            computed_weights_for_label_index = petuum_mlr_computed_label_weights[label_index]
-            computed_factor = libsvm_data_scalar_vector_product (attribute_dict, computed_weights_for_label_index)
-            computed_factor = softmax (attribute_dict, computed_weights_for_label_index)
-            computed_factor_dict[label_index] = computed_factor
-            
+ 
+ 
     # trace 
-    for label_index in range (nb_labels):
+    for label_index in list_of_labels_with_a_value:
         print ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, computed_factor_dict[label_index]))
         
     # predict label by getting the label index having the greatest factor
     geatest_factor = -sys.float_info.max
     highest_label_index = None
-    for label_index in range (nb_labels):
+    for label_index in label_index_range:
         if computed_factor_dict[label_index] > geatest_factor:
             geatest_factor = computed_factor_dict[label_index]
             highest_label_index = label_index
