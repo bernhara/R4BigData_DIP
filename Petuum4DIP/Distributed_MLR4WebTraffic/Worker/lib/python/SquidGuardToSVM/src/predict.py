@@ -7,6 +7,8 @@ logging.basicConfig (level=logging.WARNING)
 
 import unittest
 
+import petuumEmulationLib
+
 _feature_one_based = False
 _label_one_based = False
 
@@ -89,10 +91,12 @@ def libsvm_data_scalar_vector_product (v1, v2):
 
 
 
- 
-    
 
 def predict_label_index (attribute_dict, petuum_mlr_computed_label_weights):
+    
+    
+    
+    predicted_labelization = petuumEmulationLib.Predict (input_data_for_prediction_sparse_vector, input_weight_sparse_matrix, one_based=False)
     
     nb_labels = petuum_mlr_computed_label_weights["num_labels"]
       
