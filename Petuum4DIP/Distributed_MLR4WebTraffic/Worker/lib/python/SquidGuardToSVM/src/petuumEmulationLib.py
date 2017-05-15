@@ -205,7 +205,7 @@ def dict_vector_to_list_vector (dict_vector, one_based=False):
     
     list_vector = [ 0.0 ] * list_size
     if one_based:
-        for k, val_for_k in dict_vector:
+        for k, val_for_k in dict_vector.items():
             list_vector[k-1] = val_for_k
     else:
         for k, val_for_k in dict_vector.items():
@@ -216,10 +216,15 @@ def dict_vector_to_list_vector (dict_vector, one_based=False):
 def list_vector_to_dict_vector (list_vector, one_based=False):
     
     dict_vector = {}
-    for i in range (len(list_vector)):
-        elem = list_vector[i]
-        if elem != 0.0:
-            dict_vector[i] = elem
+    
+    if one_based:
+        dict_range = range (1, len(list_vector) + 1)
+    else:
+        dict_range = range (0, len(list_vector))
+    
+    for key,value in zip (dict_range, list_vector):
+        if value != 0.0:
+            dict_vector[key] = value
             
     return dict_vector
     
@@ -244,7 +249,8 @@ class moduleTestCases (unittest.TestCase):
     
     
     def test_dict_vector_to_list_vector (self):
-
+        
+        # test zero_based version
         sample = {0:0.629833, 1:3.12866, 5:-0.415136, 11:-1.54497, 2:0.300126, 9:-0.132952, 8:-1.98521}
         ref_result = [
             0.629833, #0
@@ -261,12 +267,36 @@ class moduleTestCases (unittest.TestCase):
             -1.54497, #11
         ]
         
-        computed_result = dict_vector_to_list_vector(sample)    
+        computed_result = dict_vector_to_list_vector(sample, one_based=False)    
         for r,c in zip(ref_result, computed_result):
             self.assertEqual(r, c, 'dict_vector_to_list_vector')
+
+
+        # test one_based version            
+        sample = {1:3.12866, 5:-0.415136, 11:-1.54497, 2:0.300126, 9:-0.132952, 8:-1.98521}
+        ref_result = [
+            3.12866, #1
+            0.300126, #2
+            0.0, #3
+            0.0, #4
+            -0.415136, #5
+            0.0, #6
+            0.0, #7
+            -1.98521, #8
+            -0.132952, #9
+            0.0, #10
+            -1.54497, #11
+        ]
+        
+        computed_result = dict_vector_to_list_vector(sample, one_based=True)    
+        for r,c in zip(ref_result, computed_result):
+            self.assertEqual(r, c, 'dict_vector_to_list_vector')            
+
+            
             
     def test_list_vector_to_dict_vector (self):
 
+        # test zero_based version
         sample = [
             0.629833, #0
             3.12866, #1
@@ -283,16 +313,35 @@ class moduleTestCases (unittest.TestCase):
         ]
         ref_result = {0:0.629833, 1:3.12866, 5:-0.415136, 11:-1.54497, 2:0.300126, 9:-0.132952, 8:-1.98521}        
         
-        computed_result = list_vector_to_dict_vector(sample) 
+        computed_result = list_vector_to_dict_vector(sample, one_based=False) 
         self.assertEqual(ref_result, computed_result)
         
         sample.append (0.0)
-        computed_result = list_vector_to_dict_vector(sample) 
+        computed_result = list_vector_to_dict_vector(sample, one_based=False) 
         self.assertEqual(ref_result, computed_result)
         
         sample.append (1.0)
-        computed_result = list_vector_to_dict_vector(sample) 
-        self.assertNotEqual(ref_result, computed_result)        
+        computed_result = list_vector_to_dict_vector(sample, one_based=False) 
+        self.assertNotEqual(ref_result, computed_result)   
+        
+        # test one_based version
+        sample = [
+            3.12866, #1
+            0.300126, #2
+            0.0, #3
+            0.0, #4
+            -0.415136, #5
+            0.0, #6
+            0.0, #7
+            -1.98521, #8
+            -0.132952, #9
+            0.0, #10
+            -1.54497, #11
+        ]
+        ref_result = {1:3.12866, 5:-0.415136, 11:-1.54497, 2:0.300126, 9:-0.132952, 8:-1.98521}        
+        
+        computed_result = list_vector_to_dict_vector(sample, one_based=True) 
+        self.assertEqual(ref_result, computed_result)             
         
 
      
@@ -376,7 +425,7 @@ class moduleTestCases (unittest.TestCase):
         
         ref_result = { 0:0.0840387,  1:0.875732,  2:0.0282205,  3:0.00296929,  4:0.00167768,  5:0.00701246,  6:0.000498008 }
        
-        predicted_labelization = Predict (input_data_for_prediction_sparse_vector, w_cache_sparse_matrix)
+        predicted_labelization = Predict (input_data_for_prediction_sparse_vector, w_cache_sparse_matrix, on_based=False)
         
         for label in ref_result.keys():
             computed_result_item = predicted_labelization[label]
