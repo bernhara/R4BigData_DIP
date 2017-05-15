@@ -390,7 +390,7 @@ class moduleTestCases (unittest.TestCase):
 
         '''
         
-        tested_precision = 10
+        tested_precision = 3
         
         w_cache_ = {}
         y_vec = {}
