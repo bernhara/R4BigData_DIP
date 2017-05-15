@@ -144,7 +144,7 @@ float SparseDenseFeatureDotProduct(const AbstractFeature<float>& f1,
 # =======================================================================================================
 
 
-def Predict (feature_dict, weigth_dict_table):
+def Predict (feature_dict_sparse_vector, weigth_dict_table_sparse_matrix, one_based=False):
     """Implements C++ function:
 
 std::vector<float> MLRSGDSolver::Predict(const petuum::ml::AbstractFeature<float>& feature) const
@@ -181,14 +181,16 @@ std::vector<float> MLRSGDSolver::Predict(const petuum::ml::AbstractFeature<float
     
     product_vector_dict = {}
     
-    for label in weigth_dict_table.keys():
+    for label in weigth_dict_table_sparse_matrix.keys():
         weights_dict_for_this_label = weigth_dict_table[label]
         product_for_this_label = FeatureDotProductFun_ (feature_dict, weights_dict_for_this_label)
         product_vector_dict[label] = product_for_this_label
         
-    softmaxed_product_vector_dict = Softmax (product_vector_dict)
+    dense_product_vector_dict = dict_vector_to_list_vector(dict_vector, one_based)
+    dense_softmaxed_product_vector_dict = Softmax (dense_product_vector_dict)
+    sparse_softmaxed_product_vector_dict = list_vector_to_dict_vector(dense_softmaxed_product_vector_dict, one_based)
     
-    return softmaxed_product_vector_dict
+    return sparse_softmaxed_product_vector_dict
 
 def dict_vector_to_list_vector (dict_vector, one_based=False):
     
@@ -374,7 +376,7 @@ class moduleTestCases (unittest.TestCase):
         
         ref_result = { 0:0.0840387,  1:0.875732,  2:0.0282205,  3:0.00296929,  4:0.00167768,  5:0.00701246,  6:0.000498008 }
        
-        predicted_labelization = Predict (input_data_for_prediction, w_cache_)
+        predicted_labelization = Predict (input_data_for_prediction_sparse_vector, w_cache_sparse_matrix)
         
         for label in ref_result.keys():
             computed_result_item = predicted_labelization[label]
