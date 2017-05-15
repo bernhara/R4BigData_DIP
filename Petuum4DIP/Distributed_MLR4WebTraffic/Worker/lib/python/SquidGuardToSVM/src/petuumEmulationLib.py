@@ -283,6 +283,15 @@ class moduleTestCases (unittest.TestCase):
         
         computed_result = list_vector_to_dict_vector(sample) 
         self.assertEqual(ref_result, computed_result)
+        
+        sample.append (0.0)
+        computed_result = list_vector_to_dict_vector(sample) 
+        self.assertEqual(ref_result, computed_result)
+        
+        sample.append (1.0)
+        computed_result = list_vector_to_dict_vector(sample) 
+        self.assertNotEqual(ref_result, computed_result)        
+        
 
      
     def test_LogSumVec (self):
