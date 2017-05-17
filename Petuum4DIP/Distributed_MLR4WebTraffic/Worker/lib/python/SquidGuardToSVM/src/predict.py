@@ -12,6 +12,24 @@ import petuumEmulationLib
 _feature_one_based = False
 _label_one_based = False
 
+'''
+The dictionary representing a libsvm_file will have (eventually) the following keys:
+
+    [num_train_total]=3
+    [num_train_this_partition]=3
+    [feature_dim]=3
+    [num_labels]=5
+    [format]=libsvm
+    [feature_one_based]=0
+    [label_one_based]=0
+    [snappy_compressed]0
+    
+    [feature_0]={ [label_0]:value_0, [label_1]:value_1 ...}
+
+'''
+
+
+
 def read_peetuum_mlr_weight_file (weight_file_name):
     
     weight_dict ={}
@@ -52,6 +70,59 @@ def read_libsvm_file (libsvm_file_name, label_one_based, feature_one_based):
         
     return (file_content_list)
 
+def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, target_label_one_based):
+
+    rebased_libsvm_file_as_dict = libsvm_file_as_dict.copy()
+    
+    # adjust elements to default configuration
+    if not rebased_libsvm_file_as_disct.haskey('feature_one_based'):
+        # if field 'feature_one_based' is missing, it is assumed that the file has features "zero based"
+        rebased_libsvm_file_as_disct['feature_one_based'] = False
+
+    if not rebased_libsvm_file_as_disct.haskey('label_one_based'):
+        # if field 'label_one_based' is missing, it is assumed that the file has labels "zero based"
+        rebased_libsvm_file_as_disct['label_one_based'] = False        
+        
+    
+    # what to rebase and rebase
+    if libsvm_file_as_dict['feature_one_based'] != target_feature_one_based:
+        
+        # we have to rebase the features
+        rebased_libsvm_file_as_dict['feature_one_based'] = target_feature_one_based
+        if target_feature_one_based:
+            # rebase from zero_based to one_based
+            feature_index_source_range = range(0, rebased_libsvm_file_as_dict['feature_dim'] - 1)
+            feature_index_target_range = range(1, rebased_libsvm_file_as_dict['feature_dim'])
+        else:
+            # rebase from one_based to zero_based
+            feature_index_source_range = range(1, rebased_libsvm_file_as_dict['feature_dim'])
+            feature_index_target_range = range(0, rebased_libsvm_file_as_dict['feature_dim'] - 1)
+            
+        pass
+            
+        
+        
+    if libsvm_file_as_dict['target_label_one_based'] != target_label_one_based:
+    
+        # we have to rebase labels
+        rebased_libsvm_file_as_dict['label_one_based'] = target_label_one_based
+        if target_label_one_based:
+            # rebase from zero_based to one_based
+            label_index_source_range = range(0, rebased_libsvm_file_as_dict['num_labels'] - 1)
+            label_index_target_range = range(1, rebased_libsvm_file_as_dict['num_labels'])
+        else:
+            # rebase from one_based to zero_based
+            label_index_source_range = range(1, rebased_libsvm_file_as_dict['num_labels'])
+            label_index_target_range = range(0, rebased_libsvm_file_as_dict['num_labels'] - 1)
+            
+        # remove original entries previously copied
+        for index_key in label_index_source_range:
+            del rebased_libsvm_file_as_dict[index_key]
+            
+        for source_index, target_index in zip (label_index_source_range, label_index_target_range):
+            rebased_libsvm_file_as_dict[target_index] = libsvm_file_as_dict[source_index]
+        
+    return rebased_libsvm_file_as_dict
 
 def libsvm_feature_vector_to_dict (libsvm_feature_line, feature_one_based):
 
