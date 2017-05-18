@@ -326,19 +326,18 @@ def main():
 
 class moduleTestCases (unittest.TestCase):
     
-    def test_rebase_libsvm_file_representation (self):
-        
-        # based on Petuum generated weight file
-        zero_based_feature_and_zero_based_label_sample = {
-            'meta': {
-                'num_labels': 2,
-                'feature_dim': 3
-            },
-            'matrix': {
-                0: {0: 1.1, 1: 1.2, 2:1.3},
-                1: {0: 2.1, 2:2.3}
-            }
+    _zero_based_feature_and_zero_based_label_sample = {
+        'meta': {
+            'num_labels': 2,
+            'feature_dim': 3
+        },
+        'matrix': {
+            0: {0: 1.1, 1: 1.2, 2:1.3},
+            1: {0: 2.1, 2:2.3}
         }
+    }    
+
+    def test_rebase_libsvm_file_representation_1 (self):
         
         one_based_feature_and_one_based_label_rebased_sample = {
             'meta': {
@@ -353,10 +352,31 @@ class moduleTestCases (unittest.TestCase):
             }
         }
         
-        rebased_sample = rebase_libsvm_file_representation(zero_based_feature_and_zero_based_label_sample,
+        rebased_sample = rebase_libsvm_file_representation(self._zero_based_feature_and_zero_based_label_sample,
                                                     target_feature_one_based=True,
                                                     target_label_one_based=True)      
         self.assertEqual(one_based_feature_and_one_based_label_rebased_sample, rebased_sample)
+        
+    def test_rebase_libsvm_file_representation_2 (self):
+        
+        one_based_feature_and_zero_based_label_rebased_sample = {
+            'meta': {
+                'num_labels': 2,
+                'feature_dim': 3,
+                'feature_one_based': 1,
+                'label_one_based': 0,                
+            },
+            'matrix': {
+                0: {1: 1.1, 2: 1.2, 3:1.3},
+                1: {1: 2.1, 3:2.3}
+            }
+        }
+        
+        rebased_sample = rebase_libsvm_file_representation(self._zero_based_feature_and_zero_based_label_sample,
+                                                    target_feature_one_based=True,
+                                                    target_label_one_based=False)      
+        self.assertEqual(one_based_feature_and_zero_based_label_rebased_sample, rebased_sample)
+       
          
 
 
