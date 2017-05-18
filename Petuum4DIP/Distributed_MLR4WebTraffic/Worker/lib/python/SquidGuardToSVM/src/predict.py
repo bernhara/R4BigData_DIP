@@ -344,6 +344,8 @@ class moduleTestCases (unittest.TestCase):
             'meta': {
                 'num_labels': 2,
                 'feature_dim': 3,
+                'feature_one_based': 1,
+                'label_one_based': 1,                
             },
             'matrix': {
                 1: {1: 1.1, 2: 1.2, 3:1.3},
