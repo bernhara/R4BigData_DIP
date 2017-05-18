@@ -74,18 +74,23 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
 
     rebased_libsvm_file_as_dict = libsvm_file_as_dict.copy()
     
-    # adjust elements to default configuration
-    if not rebased_libsvm_file_as_disct.haskey('feature_one_based'):
-        # if field 'feature_one_based' is missing, it is assumed that the file has features "zero based"
-        rebased_libsvm_file_as_disct['feature_one_based'] = False
 
-    if not rebased_libsvm_file_as_disct.haskey('label_one_based'):
+    # adjust elements to default configuration
+    source_feature_one_based_flag = libsvm_file_as_dict.get('feature_one_based', False)
+    source_label_one_based_flag = libsvm_file_as_dict.get('label_one_based', False)    
+    
+    if not 'feature_one_based' in rebased_libsvm_file_as_dict:
+        # if field 'feature_one_based' is missing, it is assumed that the file has features "zero based"
+        rebased_libsvm_file_as_dict['feature_one_based'] = source_feature_one_based_flag
+
+    if not 'label_one_based' in rebased_libsvm_file_as_dict:
         # if field 'label_one_based' is missing, it is assumed that the file has labels "zero based"
-        rebased_libsvm_file_as_disct['label_one_based'] = False        
+        rebased_libsvm_file_as_dict['label_one_based'] = source_label_one_based_flag        
         
     
     # what to rebase and rebase
-    if libsvm_file_as_dict['feature_one_based'] != target_feature_one_based:
+    
+    if source_feature_one_based_flag != target_feature_one_based:
         
         # we have to rebase the features
         rebased_libsvm_file_as_dict['feature_one_based'] = target_feature_one_based
@@ -102,7 +107,7 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
             
         
         
-    if libsvm_file_as_dict['target_label_one_based'] != target_label_one_based:
+    if source_label_one_based_flag != target_label_one_based:
     
         # we have to rebase labels
         rebased_libsvm_file_as_dict['label_one_based'] = target_label_one_based
@@ -258,28 +263,27 @@ def main():
 
 class moduleTestCases (unittest.TestCase):
     
-    def floatTruncatedString (self, f, n_digits = 14):
+    def test_rebase_libsvm_file_as_dict (self):
         
-        # float formating function rounds the value
-        # use string manipulation instead
+        # based on Petuum generated weight file
+        zero_based_feature_and_zero_based_label_sample = {
+            'num_labels': 2,
+            'feature_dim': 3,
+            0: {0: 1.1, 1: 1.2, 2:1.3},
+            1: {0: 2.1, 2:2.3}
+        }
         
-        f_as_string = str(float(f))
-        dot_position = f_as_string.index('.')
-        (natural_part, decimal_part) = f_as_string.split(sep='.')
+        one_based_feature_and_one_based_label_rebased_sample = {
+            'num_labels': 2,
+            'feature_dim': 3,
+            1: {1: 1.1, 2: 1.2, 3:1.3},
+            2: {1: 2.1, 3:2.3}
+        }
         
-        str_containing_only_zeros = ''.zfill(20) # assert that n_digits is < than 20
-        decimal_part += str_containing_only_zeros
-        # truncate decimal_part
-        decimal_part = decimal_part[:n_digits]
-
-        rounded_string_for_f = natural_part + '.' + decimal_part
-        return rounded_string_for_f
-    
-     
-    def test_TODO (self):
-        tested_precision = 3
-        
-        self.assertTrue(False, "NOT YES IMPLEMENTED")
+        rebased_sample = rebase_libsvm_file_as_dict(zero_based_feature_and_zero_based_label_sample,
+                                                    target_feature_one_based=True,
+                                                    target_label_one_based=True)      
+        self.assertEqual(one_based_feature_and_one_based_label_rebased_sample, rebased_sample)
          
 
 
