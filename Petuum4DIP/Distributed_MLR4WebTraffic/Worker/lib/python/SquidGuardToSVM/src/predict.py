@@ -74,21 +74,25 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
 
     rebased_libsvm_file_as_dict = {}
     # copy first non numeric values, which does not contain "label" information
-    for key, value in libsvm_file_as_dict:
-        if key.isdecimal():
-            rebased_libsvm_file_as_dict[key] = value.copy()
+    for key, value in libsvm_file_as_dict.items():
+        if type(key) is str:
+            rebased_libsvm_file_as_dict[key] = value
     
     # adjust elements to default configuration
-    source_feature_one_based_flag = libsvm_file_as_dict.get('feature_one_based', False)
-    source_label_one_based_flag = libsvm_file_as_dict.get('label_one_based', False)    
-    
+    source_feature_one_based_libsvm_flag = libsvm_file_as_dict.get('feature_one_based', '0')
+    source_label_one_based_libsvm_flag = libsvm_file_as_dict.get('label_one_based', '0')
+
     if not 'feature_one_based' in rebased_libsvm_file_as_dict:
         # if field 'feature_one_based' is missing, it is assumed that the file has features "zero based"
-        rebased_libsvm_file_as_dict['feature_one_based'] = source_feature_one_based_flag
+        rebased_libsvm_file_as_dict['feature_one_based'] = source_feature_one_based_libsvm_flag
 
     if not 'label_one_based' in rebased_libsvm_file_as_dict:
         # if field 'label_one_based' is missing, it is assumed that the file has labels "zero based"
-        rebased_libsvm_file_as_dict['label_one_based'] = source_label_one_based_flag        
+        rebased_libsvm_file_as_dict['label_one_based'] = source_label_one_based_libsvm_flag
+        
+    # provide the information as boolean, to ease computation
+    source_feature_one_based = True if source_feature_one_based_libsvm_flag == '1' else False 
+    source_label_one_based = True if source_label_one_based_libsvm_flag == '1' else False      
         
     
     # what to rebase and rebase
@@ -107,9 +111,9 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
     else:
         label_index_delta = 0
             
-    # copy entries which are identifier as "label" lines
-    for label_index, value in libsvm_file_as_dict:
-        if index_key.isdecimal():
+    # copy entries which are identified as "label" lines (ie. key is an int)
+    for label_index, value in libsvm_file_as_dict.items():
+        if type(label_index) is int:
             # line contain a "label" information
             rebased_libsvm_file_as_dict[label_index + label_index_delta] = value.copy()
             
@@ -125,20 +129,13 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
             # rebase from one_based to zero_based
             feature_index_delta = -1
             
-        # remove original entries previously copied
-        for index_key in feature_index_source_range:
-            del rebased_libsvm_file_as_dict[index_key]
-            
-        for source_index, target_index in zip (label_index_source_range, label_index_target_range):
-            rebased_libsvm_file_as_dict[target_index] = libsvm_file_as_dict[source_index]
-            
-        # copy entries which are identifier as "label" lines
-        for label_index, value in libsvm_file_as_dict:
-            if index_key.isdecimal():
-                # line contain a "label" information
-                original_feature_line=rebased_libsvm_file_as_dict[label_index]
+        # iterate on entries which are identified as "label" lines
+        for label_index, value in rebased_libsvm_file_as_dict.items():
+            if type(label_index) is int:
+                # line contains a "label" information
+                current_feature_line=rebased_libsvm_file_as_dict[label_index]
                 rebased_feature_line={}
-                for feature_index,value in original_feature_line:
+                for feature_index,value in current_feature_line.items():
                     rebased_feature_line[feature_index + feature_index_delta]=value
                         
         
