@@ -1,6 +1,7 @@
 # used to overide shell vars for script importSquidLogsFromCollector
 
-# example
-# the name used to be identified remotely
+# my_name: (mandatory) the name used to be identified remotely
 # my_name=s-m2m-gw.dtdns.net
 
+# remote_source_dir: (optinal) the remote dir which will be cloned locally
+# by default, the folder "~/CollectorIn/${my_name}" is cloned
