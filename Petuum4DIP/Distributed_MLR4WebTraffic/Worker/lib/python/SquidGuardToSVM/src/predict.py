@@ -15,48 +15,59 @@ _label_one_based = False
 '''
 The dictionary representing a libsvm_file will have (eventually) the following keys:
 
-    [num_train_total]=3
-    [num_train_this_partition]=3
-    [feature_dim]=3
-    [num_labels]=5
-    [format]=libsvm
-    [feature_one_based]=0
-    [label_one_based]=0
-    [snappy_compressed]0
+    [meta] = {
+        [num_train_total]=3
+        [num_train_this_partition]=3
+        [feature_dim]=3
+        [num_labels]=5
+        [format]=libsvm
+        [feature_one_based]=0
+        [label_one_based]=0
+        [snappy_compressed]=0
+    }
+    [matrix] = {
     
-    [feature_0]={ [label_0]:value_0, [label_1]:value_1 ...}
+        [feature_0]={ [label_0]:value_0, [label_1]:value_1 ...}
+    }
 
 '''
+def libsvm_meta_attribute_string_to_dict (libsvm_meta_attribute_line):
 
+    key_string_from_file, value_string_from_file = libsvm_feature_line.split(':', maxsplit = 1)
 
-
-def read_peetuum_mlr_weight_file (weight_file_name):
+    key = key_string_from_file.strip()
+    weight_dict[key] = int(value_string_from_file)    
     
-    weight_dict ={}
-    
-    with open (weight_file_name, 'r') as weight_file:
-        
-        for _ in range(2):
-            line = weight_file.readline()
-            line_elements_list = line.split(':')
-                 
-            key = line_elements_list[0].strip()
-            value = line_elements_list[1]     
-            weight_dict[key] = int(value)
-        
-        num_labels = weight_dict["num_labels"]
-        for label_number in range (num_labels):
-            line = weight_file.readline()
-            vector_dict = libsvm_feature_vector_to_dict (line, feature_one_based = False)
-            
-            weight_dict[label_number] = vector_dict
-                 
-    return (weight_dict)
+    meta_attribute_dict = {key: value} 
+   
+    return (meta_attribute_dict)
 
-def read_libsvm_file (libsvm_file_name, label_one_based, feature_one_based):
+def libsvm_feature_string_to_dict (libsvm_feature_line):
+
+    weighted_attribute_list = libsvm_feature_line.split()
     
-    file_content_list =[]
-        
+    feature_weigth_dict ={int(k):float(v) for k,v in (x.split(':') for x in weighted_attribute_list)}    
+    
+    return (feature_weigth_dict)
+
+def labeled_libsvm_vector_to_label_and_dict (labeled_libsvm_line):
+    
+    label_string, feature_weigth_dict = labeled_libsvm_line.split(maxsplit = 1)
+
+    label = int(label_string)
+    
+    feature_weigth_dict = libsvm_feature_string_to_dict (libsvm_feature_string)
+   
+    return (label, feature_weigth_dict)
+
+
+
+#
+# Read a libsvm file with meta info
+#
+
+def read_libsvm_matrix_file (libsvm_file_name):
+    
     with open (libsvm_file_name, 'r') as libsvm_file:
         
         while True:
@@ -65,30 +76,93 @@ def read_libsvm_file (libsvm_file_name, label_one_based, feature_one_based):
             if not line:
                 break
             
-            content = labeled_libsvm_vector_to_label_and_dict (line, label_one_based, feature_one_based)
+            content = labeled_libsvm_vector_to_label_and_dict (line)
             file_content_list.append (content)
         
-    return (file_content_list)
+    return (file_content_list)    
+    
+    file_content_list =[]
+    
+def read_libsvm_meta_file (libsvm_file_name):
+    '''
+    Reads the "meta" annex file used by Petuum
+    '''    
+    
+    libsvm_meta_file_name = libsvm_file_name + '.meta'
+    
+    libsvm_meta_data = {}
+        
+    with open (libsvm_meta_file_name, 'r') as libsvm_meta_file:
+        
+        while True:
+            
+            line = libsvm_file.readline()
+            if not line:
+                break
+            
+            coentent = libsvm_meta_attribute_string_to_dict (line)
+            libsvm_meta_data.append(coentent)
+        
+    return (libsvm_meta_data)
 
-def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, target_label_one_based):
+def read_libsvm_file (libsvm_file_name):
+    '''
+    Reads the "data" (matrix)
+    '''    
+    
+    libsvm_parsed_data = {}
+    
+    libsvm_parsed_data['matrix'] = read_libsvm_matrix_file (libsvm_file_name)
+    libsvm_data['meta'] = read_libsvm_meta_file (libsvm_file_name)
+    
+    return libsvm_parsed_data
 
-    rebased_libsvm_file_as_dict = {}
-    # copy first non numeric values, which does not contain "label" information
-    for key, value in libsvm_file_as_dict.items():
-        if type(key) is str:
-            rebased_libsvm_file_as_dict[key] = value
+#
+# Read a weight matrix file
+#
+    
+def read_peetuum_mlr_weight_file (weight_file_name):
+    
+    weight_file_representation = { 'meta': {}, 'matrix': {} }
+    
+    with open (weight_file_name, 'r') as weight_file:
+        
+        for _ in range(2):
+            line = weight_file.readline()
+            weight_file_representation['meta'].append(libsvm_meta_attribute_string_to_dict(line))
+            
+        
+        num_labels = weight_file_representation['meta']["num_labels"]
+        for label_number in range (num_labels):
+            line = weight_file.readline()
+            vector_dict = libsvm_feature_string_to_dict (line)
+            
+            weight_file_representation['matrix'][label_number] = vector_dict
+                 
+    return (weight_file_representation)
+
+#
+# utility to rebase a libsvm file representatin
+#
+
+def rebase_libsvm_file_representation (libsvm_file_representation, target_feature_one_based, target_label_one_based):
+
+    rebased_libsvm_file_representation = {'meta': {}, 'matrix': {}}
+
+    # copy first the "meta" information part
+    rebased_libsvm_file_representation['meta'] = libsvm_file_representation['meta'].copy()
     
     # adjust elements to default configuration
-    source_feature_one_based_libsvm_flag = libsvm_file_as_dict.get('feature_one_based', '0')
-    source_label_one_based_libsvm_flag = libsvm_file_as_dict.get('label_one_based', '0')
+    source_feature_one_based_libsvm_flag = libsvm_file_representation['meta'].get('feature_one_based', '0')
+    source_label_one_based_libsvm_flag = libsvm_file_representation['meta'].get('label_one_based', '0')
 
-    if not 'feature_one_based' in rebased_libsvm_file_as_dict:
+    if not 'feature_one_based' in rebased_libsvm_file_representation['meta']:
         # if field 'feature_one_based' is missing, it is assumed that the file has features "zero based"
-        rebased_libsvm_file_as_dict['feature_one_based'] = source_feature_one_based_libsvm_flag
+        rebased_libsvm_file_representation['meta']['feature_one_based'] = source_feature_one_based_libsvm_flag
 
-    if not 'label_one_based' in rebased_libsvm_file_as_dict:
+    if not 'label_one_based' in rebased_libsvm_file_representation['meta']:
         # if field 'label_one_based' is missing, it is assumed that the file has labels "zero based"
-        rebased_libsvm_file_as_dict['label_one_based'] = source_label_one_based_libsvm_flag
+        rebased_libsvm_file_representation['meta']['label_one_based'] = source_label_one_based_libsvm_flag
         
     # provide the information as boolean, to ease computation
     source_feature_one_based = True if source_feature_one_based_libsvm_flag == '1' else False 
@@ -101,7 +175,7 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
     if source_label_one_based_flag != target_label_one_based:
     
         # we have to rebase labels
-        rebased_libsvm_file_as_dict['label_one_based'] = target_label_one_based
+        rebased_libsvm_file_representation['meta']['label_one_based'] = target_label_one_based
         if target_label_one_based:
             # rebase from zero_based to one_based
             label_index_delta = +1
@@ -112,16 +186,14 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
         label_index_delta = 0
             
     # copy entries which are identified as "label" lines (ie. key is an int)
-    for label_index, value in libsvm_file_as_dict.items():
-        if type(label_index) is int:
-            # line contain a "label" information
-            rebased_libsvm_file_as_dict[label_index + label_index_delta] = value.copy()
+    for label_index, value in libsvm_file_representation['matrix'].items():
+        rebased_libsvm_file_representation['matrix'][label_index + label_index_delta] = value.copy()
             
     # rebase features
     if source_feature_one_based_flag != target_feature_one_based:
         
         # we have to rebase the features
-        rebased_libsvm_file_as_dict['feature_one_based'] = target_feature_one_based
+        rebased_libsvm_file_representation['meta']['feature_one_based'] = target_feature_one_based
         if target_feature_one_based:
             # rebase from zero_based to one_based
             feature_index_delta = +1
@@ -130,41 +202,18 @@ def rebase_libsvm_file_as_dict (libsvm_file_as_dict, target_feature_one_based, t
             feature_index_delta = -1
             
         # iterate on entries which are identified as "label" lines
-        for label_index, value in rebased_libsvm_file_as_dict.items():
-            if type(label_index) is int:
-                # line contains a "label" information
-                current_feature_line=rebased_libsvm_file_as_dict[label_index]
-                rebased_feature_line={}
-                for feature_index,value in current_feature_line.items():
-                    rebased_feature_line[feature_index + feature_index_delta]=value
+        for label_index, feature_vector in rebased_libsvm_file_representation['matrix'].items():
+            # line contains a "label" information
+            current_feature_vector=rebased_libsvm_file_representation['matrix'][label_index]
+            rebased_feature_vector={}
+            for feature_index,value in current_feature_vector.items():
+                rebased_feature_vector[feature_index + feature_index_delta]=value
+            rebased_libsvm_file_representation['matrix'][label_index] = rebased_feature_vector
                         
         
-    return rebased_libsvm_file_as_dict
+    return rebased_libsvm_file_representation
 
-def libsvm_feature_vector_to_dict (libsvm_feature_line, feature_one_based):
 
-    weighted_attribute_list = libsvm_feature_line.split()
-    
-    if feature_one_based:
-        attribute_weigth_dict ={int(k)-1:float(v) for k,v in (x.split(':') for x in weighted_attribute_list)}
-    else:
-        attribute_weigth_dict ={int(k):float(v) for k,v in (x.split(':') for x in weighted_attribute_list)}    
-    
-    return (attribute_weigth_dict)
-
-def labeled_libsvm_vector_to_label_and_dict (labeled_libsvm_line, label_one_based, feature_one_based):
-    
-    label_vector_pair = labeled_libsvm_line.split(maxsplit = 1)
-    
-    if label_one_based:
-        label = int(label_vector_pair[0]) - 1
-    else:
-        label = int(label_vector_pair[0])
-
-    libsvm_feature_string =  label_vector_pair[1]
-    attribute_weigth_dict = libsvm_feature_vector_to_dict (libsvm_feature_string, feature_one_based)
-   
-    return (label, attribute_weigth_dict)
 
 
 def predict_label_index (attribute_dict, petuum_mlr_computed_label_weights):
@@ -279,17 +328,25 @@ class moduleTestCases (unittest.TestCase):
         
         # based on Petuum generated weight file
         zero_based_feature_and_zero_based_label_sample = {
-            'num_labels': 2,
-            'feature_dim': 3,
-            0: {0: 1.1, 1: 1.2, 2:1.3},
-            1: {0: 2.1, 2:2.3}
+            'meta': {
+                'num_labels': 2,
+                'feature_dim': 3
+            },
+            'matrix': {
+                0: {0: 1.1, 1: 1.2, 2:1.3},
+                1: {0: 2.1, 2:2.3}
+            }
         }
         
         one_based_feature_and_one_based_label_rebased_sample = {
-            'num_labels': 2,
-            'feature_dim': 3,
-            1: {1: 1.1, 2: 1.2, 3:1.3},
-            2: {1: 2.1, 3:2.3}
+            'meta': {
+                'num_labels': 2,
+                'feature_dim': 3,
+            },
+            'matrix': {
+                1: {1: 1.1, 2: 1.2, 3:1.3},
+                2: {1: 2.1, 3:2.3}
+            }
         }
         
         rebased_sample = rebase_libsvm_file_as_dict(zero_based_feature_and_zero_based_label_sample,
