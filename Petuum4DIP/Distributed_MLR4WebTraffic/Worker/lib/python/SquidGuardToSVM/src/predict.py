@@ -153,34 +153,35 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
     rebased_libsvm_file_representation['meta'] = libsvm_file_representation['meta'].copy()
     
     # adjust elements to default configuration
-    source_feature_one_based_libsvm_flag = libsvm_file_representation['meta'].get('feature_one_based', '0')
-    source_label_one_based_libsvm_flag = libsvm_file_representation['meta'].get('label_one_based', '0')
+    source_feature_one_based_libsvm_meta_attribute_value = libsvm_file_representation['meta'].get('feature_one_based', 0)
+    source_label_one_based_libsvm_meta_attribute_value = libsvm_file_representation['meta'].get('label_one_based', 0)
 
     if not 'feature_one_based' in rebased_libsvm_file_representation['meta']:
         # if field 'feature_one_based' is missing, it is assumed that the file has features "zero based"
-        rebased_libsvm_file_representation['meta']['feature_one_based'] = source_feature_one_based_libsvm_flag
+        rebased_libsvm_file_representation['meta']['feature_one_based'] = source_feature_one_based_libsvm_meta_attribute_value
 
     if not 'label_one_based' in rebased_libsvm_file_representation['meta']:
         # if field 'label_one_based' is missing, it is assumed that the file has labels "zero based"
-        rebased_libsvm_file_representation['meta']['label_one_based'] = source_label_one_based_libsvm_flag
+        rebased_libsvm_file_representation['meta']['label_one_based'] = source_label_one_based_libsvm_meta_attribute_value
         
     # provide the information as boolean, to ease computation
-    source_feature_one_based = True if source_feature_one_based_libsvm_flag == '1' else False 
-    source_label_one_based = True if source_label_one_based_libsvm_flag == '1' else False      
+    source_feature_one_based = True if source_feature_one_based_libsvm_meta_attribute_value == 1 else False 
+    source_label_one_based = True if source_label_one_based_libsvm_meta_attribute_value == 1 else False      
         
     
     # what to rebase and rebase
 
     # copy label lines, with eventual rebasing if needed    
-    if source_label_one_based_flag != target_label_one_based:
+    if source_label_one_based != target_label_one_based:
     
         # we have to rebase labels
-        rebased_libsvm_file_representation['meta']['label_one_based'] = target_label_one_based
         if target_label_one_based:
             # rebase from zero_based to one_based
+            rebased_libsvm_file_representation['meta']['label_one_based'] = 1            
             label_index_delta = +1
         else:
             # rebase from one_based to zero_based
+            rebased_libsvm_file_representation['meta']['label_one_based'] = 0          
             label_index_delta = -1
     else:
         label_index_delta = 0
@@ -190,15 +191,16 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
         rebased_libsvm_file_representation['matrix'][label_index + label_index_delta] = value.copy()
             
     # rebase features
-    if source_feature_one_based_flag != target_feature_one_based:
+    if source_feature_one_based != target_feature_one_based:
         
         # we have to rebase the features
-        rebased_libsvm_file_representation['meta']['feature_one_based'] = target_feature_one_based
         if target_feature_one_based:
             # rebase from zero_based to one_based
+            rebased_libsvm_file_representation['meta']['feature_one_based'] = 1
             feature_index_delta = +1
         else:
             # rebase from one_based to zero_based
+            rebased_libsvm_file_representation['meta']['feature_one_based'] = 0
             feature_index_delta = -1
             
         # iterate on entries which are identified as "label" lines
@@ -324,7 +326,7 @@ def main():
 
 class moduleTestCases (unittest.TestCase):
     
-    def test_rebase_libsvm_file_as_dict (self):
+    def test_rebase_libsvm_file_representation (self):
         
         # based on Petuum generated weight file
         zero_based_feature_and_zero_based_label_sample = {
@@ -349,7 +351,7 @@ class moduleTestCases (unittest.TestCase):
             }
         }
         
-        rebased_sample = rebase_libsvm_file_as_dict(zero_based_feature_and_zero_based_label_sample,
+        rebased_sample = rebase_libsvm_file_representation(zero_based_feature_and_zero_based_label_sample,
                                                     target_feature_one_based=True,
                                                     target_label_one_based=True)      
         self.assertEqual(one_based_feature_and_one_based_label_rebased_sample, rebased_sample)
