@@ -376,9 +376,26 @@ class moduleTestCases (unittest.TestCase):
                                                     target_feature_one_based=True,
                                                     target_label_one_based=False)      
         self.assertEqual(one_based_feature_and_zero_based_label_rebased_sample, rebased_sample)
-       
-         
-
+ 
+    def test_rebase_libsvm_file_representation_3 (self):
+        
+        unchanged_rebased_zero_based_feature_and_zero_based_label_sample = {
+        'meta': {
+            'num_labels': 2,
+            'feature_dim': 3,
+            'feature_one_based': 0,
+            'label_one_based': 0,                      
+        },
+        'matrix': {
+            0: {0: 1.1, 1: 1.2, 2:1.3},
+            1: {0: 2.1, 2:2.3}
+        }
+    }    
+        
+        rebased_sample = rebase_libsvm_file_representation(self._zero_based_feature_and_zero_based_label_sample,
+                                                    target_feature_one_based=False,
+                                                    target_label_one_based=False)      
+        self.assertEqual(unchanged_rebased_zero_based_feature_and_zero_based_label_sample, rebased_sample)
 
 if __name__ == '__main__':
     
