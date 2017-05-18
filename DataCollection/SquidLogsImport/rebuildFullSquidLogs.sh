@@ -15,12 +15,6 @@ fi
 : ${remove_tmp:=true}
 : ${tmp_dir:=`mktemp -u -p "${HERE}/ClonedLogs/tmp"`}
 
-if [ -r "myId.sh" ]
-then
-    echo "ERROR: shell variable \"my_name\" undefinded. See ${HERE}/${CMD}-config file." 1>&2
-    exit 1
-fi
-
 if ${remove_tmp}
 then
     trap 'rm -rf "${tmp_dir}"' 0
