@@ -124,22 +124,42 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
     #
     # prevent against line which have not been correctly tagged by squidGuard
     #
-#    logging.error('1')
     if squidguardLine.find(_squidguard_target_group_field_name) == -1:
         logging.warning("The following line has not been correctly classified by squidGuard:\n\t->{}\nCorrespong log is:\n\t->{}".format(squidguardLine, squidAccesLogLine))
         squidguardLine = _squidguard_dummy_line
-#    logging.error('3')
     
-    web_request_analysis_dict = {}
-
     #
-    # analyze squidGuard input line
+    # analyze squidGuard input line to check if it is correct and does not lead to a crash later on
     #
+    # Possible formats are:
+    #     OK rewrite-url="squidguard_client_ip_addr=192.168.1.15&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=tracker&squidguard_url=http://b.scorecardresearch.com/p2?"
+    #     rewrite-url="squidguard_client_ip_addr=192.168.1.15&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=tracker&squidguard_url=http://b.scorecardresearch.com/p2?"
+    
     
     # elements are separated by ' '
     squidguardLine_elements_list = squidguardLine.split(' ')
-    squidguardLine_rewrite_result=squidguardLine_elements_list[0]
     
+    # search the element starting with "rewrite-url='
+    squidguardLine_rewrite_result = None
+    for squidguardLine_element in squidguardLine_elements_list:
+        # search for the field containing the 
+        if squidguardLine.find(_squidguard_target_group_field_name) != -1:
+            # found the expected content
+             squidguardLine_rewrite_result=squidguardLine_element
+             break
+
+        
+    if not squidguardLine_rewrite_result:
+        # failed to find what we are searching for => unexpected
+        logging.info ("no valid squidGuard reulting line found. Go on with dummny line")
+        logging.debug ("\tSquid access log line: %s" % squidAccesLogLine)
+        logging.debug ("\tsquidGuard resulting line: %s" % squidguardLine)
+        #
+        # rebuild a dummy line to prevent later crash
+        squidguardLine_rewrite_result = _squidguard_dummy_line
+    
+    
+    web_request_analysis_dict = {}
     
     #
     # url field is always placed at the end, because this field itself contains URL symbols like '&'
