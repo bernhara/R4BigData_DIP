@@ -122,16 +122,9 @@ _access_log_field_names = [
 def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
     
     #
-    # prevent against line which have not been correctly tagged by squidGuard
-    #
-    if squidguardLine.find(_squidguard_target_group_field_name) == -1:
-        logging.warning("The following line has not been correctly classified by squidGuard:\n\t->{}\nCorrespong log is:\n\t->{}".format(squidguardLine, squidAccesLogLine))
-        squidguardLine = _squidguard_dummy_line
-    
-    #
     # analyze squidGuard input line to check if it is correct and does not lead to a crash later on
     #
-    # Possible formats are:
+    # Possible currently known formats are:
     #     OK rewrite-url="squidguard_client_ip_addr=192.168.1.15&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=tracker&squidguard_url=http://b.scorecardresearch.com/p2?"
     #     rewrite-url="squidguard_client_ip_addr=192.168.1.15&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=tracker&squidguard_url=http://b.scorecardresearch.com/p2?"
     
@@ -151,7 +144,7 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
         
     if not squidguardLine_rewrite_result:
         # failed to find what we are searching for => unexpected
-        logging.info ("no valid squidGuard reulting line found. Go on with dummny line")
+        logging.info ("no valid squidGuard resulting line found. Go on with a dummny line")
         logging.debug ("\tSquid access log line: %s" % squidAccesLogLine)
         logging.debug ("\tsquidGuard resulting line: %s" % squidguardLine)
         #
