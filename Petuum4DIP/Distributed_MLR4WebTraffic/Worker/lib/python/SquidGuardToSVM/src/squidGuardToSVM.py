@@ -9,6 +9,8 @@ import hashlib
 
 import argparse
 
+import unittest
+
 import logging
 logging.basicConfig (level=logging.WARNING)
 
@@ -136,7 +138,7 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
     squidguardLine_rewrite_result = None
     for squidguardLine_element in squidguardLine_elements_list:
         # search for the field containing the 
-        if squidguardLine.find(_squidguard_target_group_field_name) != -1:
+        if squidguardLine_element.find(_squidguard_target_group_field_name) != -1:
             # found the expected content
              squidguardLine_rewrite_result=squidguardLine_element
              break
@@ -376,6 +378,23 @@ def main():
     squidGuardFileName = args.squidGuardFile
     libSVMFileName = args.libSVMFile
     squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName)
+    
+#
+# TEST CASES
+# ==========
+
+class moduleTestCases (unittest.TestCase):
+    
+    def test_analyzeSingleLogLine (self):
+        
+        squid_access_log_line = '''1495430914.656      1 192.168.1.24 TCP_MEM_HIT/200 4918 GET http://s3.amazonaws.com/anydo/prod/services.json - HIER_NONE/- application/octet-stream'''
+        squidGuard_result_string = '''OK rewrite-url="squidguard_client_ip_addr=-&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=downloads&squidguard_url=http://s3.amazonaws.com/anydo/prod/services.json"'''
+
+        test_result = analyzeSingleLogLine(squidGuard_result_string, squid_access_log_line)
+        
+        expected_test_result = None
+        self.assertEqual(expected_test_result, test_result)    
+    
 
 if __name__ == '__main__':
     main()
