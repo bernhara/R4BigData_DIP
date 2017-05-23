@@ -153,7 +153,7 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine):
             if squidguardLine_element.startswith('rewrite-url="'):
                 # content is surrounded
                 # extract the substring
-                squidguardLine_rewrite_result=squidguardLine_element[12:-1]
+                squidguardLine_rewrite_result=squidguardLine_element[13:-1] # 13 based on len('rewrite-url="')
             else: 
                 squidguardLine_rewrite_result=squidguardLine_element
             
@@ -439,7 +439,7 @@ class moduleTestCases (unittest.TestCase):
 
         test_result = analyzeSingleLogLine(squidGuard_result_string, squid_access_log_line)
         
-        expected_test_result = None
+        expected_test_result = {'squidguard_client_ip_addr': '-', 'squidguard_domain_name': '', 'squidguard_client_user_id': '', 'squidguard_client_group': 'default', 'squidguard_target_group': 'downloads', 'squidguard_url': 'http://s3.amazonaws.com/anydo/prod/services.json', 'time': '1495430914.656', 'delay': '1', 'source_host': '192.168.1.24', 'squid_cache_result': 'TCP_MEM_HIT/200', 'what1': '4918', 'http_method': 'GET', 'full_url': 'http://s3.amazonaws.com/anydo/prod/services.json', 'what2': '-', 'destination_method_and_host': 'HIER_NONE/-', 'mime_type': 'application/octet-stream'}
         self.assertEqual(expected_test_result, test_result)    
     
 
