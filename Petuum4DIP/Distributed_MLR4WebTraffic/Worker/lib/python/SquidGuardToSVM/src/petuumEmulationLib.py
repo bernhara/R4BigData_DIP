@@ -46,11 +46,11 @@ float LogSumVec(const std::vector<float>& logvec) {
 }
     """    
     
-    sum = vec_as_list[0]
+    accumulated_sum = vec_as_list[0]
     for i in range(1, len(vec_as_list)):
-        sum = LogSum(sum, vec_as_list[i])
+        accumulated_sum = LogSum(accumulated_sum, vec_as_list[i])
         
-    return sum
+    return accumulated_sum
 
 # =======================================================================================================
 
@@ -132,14 +132,14 @@ float SparseDenseFeatureDotProduct(const AbstractFeature<float>& f1,
   return sum;
 }"""   
     
-    sum = 0.0
+    accumulated_sum = 0.0
     for f1_key, f1_value in f1_feature_dict.items():
         f2_value = f2_feature_dict.get(f1_key)
         if f2_value:
             factor = f1_value * f2_value
-            sum += factor
+            accumulated_sum += factor
        
-    return (sum)
+    return (accumulated_sum)
 
 # =======================================================================================================
 
@@ -238,7 +238,6 @@ class moduleTestCases (unittest.TestCase):
         # use string manipulation instead
         
         f_as_string = str(float(f))
-        dot_position = f_as_string.index('.')
         (natural_part, decimal_part) = f_as_string.split(sep='.')
         
         str_containing_only_zeros = ''.zfill(20) # assert that n_digits is < than 20
@@ -353,8 +352,8 @@ class moduleTestCases (unittest.TestCase):
         sample = [2.32699, 2.70564, 0.70979, -1.65623, -1.32633, -0.59962, -2.18235]
         sample_LogSumVec = 3.34482
         
-        sum = LogSumVec(sample)
-        diff = (sum - sample_LogSumVec)
+        logSum = LogSumVec(sample)
+        diff = (logSum - sample_LogSumVec)
         
         diff_as_string = self.floatTruncatedString (diff, tested_precision)
         zero_as_string = self.floatTruncatedString (0.0, tested_precision)
