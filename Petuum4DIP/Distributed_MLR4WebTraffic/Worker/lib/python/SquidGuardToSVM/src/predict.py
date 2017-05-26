@@ -208,6 +208,7 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
             feature_index_delta = -1
             
         # iterate on entries which are identified as "label" lines
+        # TODO: should use "feature vector" variable and replay TEST CASE
         for label_index, feature_vector in rebased_libsvm_file_representation['matrix'].items():
             # line contains a "label" information
             current_feature_vector=rebased_libsvm_file_representation['matrix'][label_index]
@@ -222,32 +223,26 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
 
 
 
-def predict_label_index (attribute_dict, petuum_mlr_computed_label_weights):
+def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_representation, one_based=True):
     
-    #prepare data for Petuum emulation lib
-    list_of_labels_with_a_value = {label_index for label_index in range (0, nb_labels + 1) if petuum_mlr_computed_label_weights.haskeys(label_index)}
-        
-    weight_sparse_matrix = {}
-    for label_index in list_of_labels_with_a_value:
-        weight_sparse_matrix[label_index] = petuum_mlr_computed_label_weights[label_index]
 
     # FIXME: only feature_one_based is used => confusing        
-    predicted_labelization_sparse_vector = petuumEmulationLib.Predict (input_data_for_prediction_sparse_vector,
-                                                                       input_weight_sparse_matrix,
-                                                                       one_based=_feature_one_based)
+    predicted_labelization_sparse_vector = petuumEmulationLib.Predict (feature_sparse_vector,
+                                                                       petuum_mlr_computed_weight_representation['matrix'],
+                                                                       one_based=one_based)
     
- 
- 
     # trace 
-    for label_index in list_of_labels_with_a_value:
-        print ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, computed_factor_dict[label_index]))
+    for label_index in predicted_labelization_sparse_vector.keys():
+        prediction_for_this_label = predicted_labelization_sparse_vector[label_index]
+        print ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, prediction_for_this_label))
         
     # predict label by getting the label index having the greatest factor
     geatest_factor = -sys.float_info.max
     highest_label_index = None
-    for label_index in label_index_range:
-        if computed_factor_dict[label_index] > geatest_factor:
-            geatest_factor = computed_factor_dict[label_index]
+    for label_index in predicted_labelization_sparse_vector.keys():
+        prediction_for_this_label = predicted_labelization_sparse_vector[label_index]        
+        if prediction_for_this_label > geatest_factor:
+            geatest_factor = prediction_for_this_label
             highest_label_index = label_index
             
     predicted_label_index = highest_label_index
@@ -276,6 +271,8 @@ def main():
                         help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
                         help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
+    parser.add_argument("--oneBased", action='store_false', dest="oneBased",
+                        help='If true, labels and feature indexing will be one based (initial shifting is performed if necessary -- default is true => first label and feature index is "1"')    
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
 
     args = parser.parse_args()
@@ -290,6 +287,13 @@ def main():
     else:
         _label_one_based = False
         
+    if args.oneBased:
+        _feature_one_based = True        
+        _label_one_based = True
+    else:
+        _feature_one_based = False        
+        _label_one_based = False      
+        
     if args.debug:
         logging.getLogger().setLevel (logging.DEBUG)
     
@@ -297,17 +301,23 @@ def main():
     #
     # validate results
     
-    petuum_mlr_computed_label_weights = read_peetuum_mlr_weight_file (args.weitghFile)
-    test_sample_list = read_libsvm_file (args.libSVMFile, label_one_based = False, feature_one_based = False)
+    petuum_mlr_computed_label_weights_representation = read_peetuum_mlr_weight_file (args.weitghFile)
+    rebased_weights_representation = rebase_libsvm_file_representation (petuum_mlr_computed_label_weights_representation,
+                                                                        target_feature_one_based=_feature_one_based,
+                                                                        target_label_one_based=_label_one_based)
+    test_sample_representation = read_libsvm_file (args.libSVMFile)
+    rebased_test_sample_representation = rebase_libsvm_file_representation (test_sample_representation,
+                                                                            target_feature_one_based=_feature_one_based,
+                                                                            target_label_one_based=_label_one_based)
     
     test_sample_line_number = 1
-    for test_sample in test_sample_list:
+    for test_sample in rebased_test_sample_representation['matrix']:
         sample_label_index, sample_attribute_dict = test_sample
         
         print ('Checking test sample line # {} which has label index {}'.format(test_sample_line_number, sample_label_index))
         
         predicted_label_index = predict_label_index (attribute_dict = sample_attribute_dict,
-                                                     petuum_mlr_computed_label_weights = petuum_mlr_computed_label_weights)
+                                                     petuum_mlr_computed_label_weights = petuum_mlr_computed_label_weights_representation)
         
         if predicted_label_index == sample_label_index:
             print ('\tMATCHED label prediction')
