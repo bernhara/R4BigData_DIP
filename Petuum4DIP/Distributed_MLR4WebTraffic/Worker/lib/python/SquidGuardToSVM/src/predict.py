@@ -211,9 +211,8 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
         # TODO: should use "feature vector" variable and replay TEST CASE
         for label_index, feature_vector in rebased_libsvm_file_representation['matrix'].items():
             # line contains a "label" information
-            current_feature_vector=rebased_libsvm_file_representation['matrix'][label_index]
             rebased_feature_vector={}
-            for feature_index,value in current_feature_vector.items():
+            for feature_index,value in feature_vector.items():
                 rebased_feature_vector[feature_index + feature_index_delta]=value
             rebased_libsvm_file_representation['matrix'][label_index] = rebased_feature_vector
                         
