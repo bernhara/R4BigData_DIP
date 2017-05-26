@@ -290,12 +290,15 @@ def main():
         _feature_one_based = True        
         _label_one_based = True
     else:
+        print ('ZERO BASE unsuported')
+        sys.exit(1)
         _feature_one_based = False        
         _label_one_based = False      
         
     if args.debug:
         logging.getLogger().setLevel (logging.DEBUG)
-    
+        
+        
     
     #
     # validate results
@@ -311,12 +314,13 @@ def main():
     
     test_sample_line_number = 1
     for test_sample in rebased_test_sample_representation['matrix']:
-        sample_label_index, sample_attribute_dict = test_sample
+        sample_label_index, sample_feature_vector = test_sample
         
         print ('Checking test sample line # {} which has label index {}'.format(test_sample_line_number, sample_label_index))
         
-        predicted_label_index = predict_label_index (attribute_dict = sample_attribute_dict,
-                                                     petuum_mlr_computed_label_weights = petuum_mlr_computed_label_weights_representation)
+        predicted_label_index = predict_label_index (feature_sparse_vector = sample_feature_vector,
+                                                     petuum_mlr_computed_weight_representation = rebased_weights_representation,
+                                                     one_based = args.oneBased)
         
         if predicted_label_index == sample_label_index:
             print ('\tMATCHED label prediction')
