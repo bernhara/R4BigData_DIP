@@ -36,12 +36,14 @@ The dictionary representing a libsvm_file will have (eventually) the following k
 
 '''
 def libsvm_meta_attribute_string_to_dict (libsvm_meta_attribute_line):
-
-    key_string_from_file, value_string_from_file = libsvm_feature_line.split(':', maxsplit = 1)
+    
+    key_string_from_file, value_string_from_file = libsvm_meta_attribute_line.split(':', maxsplit = 1)
 
     key = key_string_from_file.strip()
-    weight_dict[key] = int(value_string_from_file)    
-    
+    if value_string_from_file.strip().isdecimal():
+        value = int(value_string_from_file)
+    else:
+        value = value_string_from_file
     meta_attribute_dict = {key: value} 
    
     return (meta_attribute_dict)
@@ -56,11 +58,11 @@ def libsvm_feature_string_to_dict (libsvm_feature_line):
 
 def labeled_libsvm_vector_to_label_and_dict (labeled_libsvm_line):
     
-    label_string, feature_weigth_dict = labeled_libsvm_line.split(maxsplit = 1)
+    label_string, feature_weigth_string = labeled_libsvm_line.split(maxsplit = 1)
 
     label = int(label_string)
     
-    feature_weigth_dict = libsvm_feature_string_to_dict (libsvm_feature_string)
+    feature_weigth_dict = libsvm_feature_string_to_dict (feature_weigth_string)
    
     return (label, feature_weigth_dict)
 
@@ -72,6 +74,8 @@ def labeled_libsvm_vector_to_label_and_dict (labeled_libsvm_line):
 
 def read_libsvm_matrix_file (libsvm_file_name):
     
+    file_content_list = []
+    
     with open (libsvm_file_name, 'r') as libsvm_file:
         
         while True:
@@ -79,13 +83,14 @@ def read_libsvm_matrix_file (libsvm_file_name):
             line = libsvm_file.readline()
             if not line:
                 break
+            line = cleanup_string_read_from_file(line)
             
             content = labeled_libsvm_vector_to_label_and_dict (line)
             file_content_list.append (content)
         
     return (file_content_list)    
     
-    file_content_list =[]
+
     
 def read_libsvm_meta_file (libsvm_file_name):
     '''
@@ -103,9 +108,10 @@ def read_libsvm_meta_file (libsvm_file_name):
             line = libsvm_meta_file.readline()
             if not line:
                 break
-            
-            coentent = libsvm_meta_attribute_string_to_dict (line)
-            libsvm_meta_data.append(coentent)
+            line = cleanup_string_read_from_file(line)
+     
+            content = libsvm_meta_attribute_string_to_dict (line)
+            libsvm_meta_data.update(content)
         
     return (libsvm_meta_data)
 
@@ -121,6 +127,14 @@ def read_libsvm_file (libsvm_file_name):
     
     return libsvm_parsed_data
 
+def cleanup_string_read_from_file (line):
+    '''
+    to prevent file format problems (Linix/DOS), with string eventual end line
+    '''
+    line = line.rstrip ('\n')
+    
+    return (line)
+        
 #
 # Read a weight matrix file
 #
@@ -133,12 +147,17 @@ def read_peetuum_mlr_weight_file (weight_file_name):
         
         for _ in range(2):
             line = weight_file.readline()
-            weight_file_representation['meta'].append(libsvm_meta_attribute_string_to_dict(line))
+            line = cleanup_string_read_from_file(line)
+                      
+            weight_file_as_dict_item = libsvm_meta_attribute_string_to_dict(line)
+            weight_file_representation['meta'].update(weight_file_as_dict_item)
             
         
         num_labels = weight_file_representation['meta']["num_labels"]
         for label_number in range (num_labels):
             line = weight_file.readline()
+            line = cleanup_string_read_from_file(line)            
+            
             vector_dict = libsvm_feature_string_to_dict (line)
             
             weight_file_representation['matrix'][label_number] = vector_dict
@@ -290,7 +309,7 @@ def main():
         _feature_one_based = True        
         _label_one_based = True
     else:
-        print ('ZERO BASE unsuported')
+        print ('ZERO BASE unsupported')
         sys.exit(1)
         _feature_one_based = False        
         _label_one_based = False      
