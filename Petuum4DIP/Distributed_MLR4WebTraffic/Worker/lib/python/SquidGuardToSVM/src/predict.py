@@ -180,10 +180,18 @@ def read_peetuum_mlr_weight_matrix_file (weight_file_name):
 #
 
 def rebase_libsvm_file_representation (libsvm_file_representation, target_feature_one_based, target_label_one_based):
+    
+    # initialize a new dict which will hold the rebased version
+    rebased_libsvm_file_representation = {}
+    
+    if 'matrix' in libsvm_file_representation:
+        rebased_libsvm_file_representation['matrix'] = {}
+    if 'vectors' in libsvm_file_representation:
+        rebased_libsvm_file_representation['vectors'] = []        
 
-    rebased_libsvm_file_representation = {'meta': {}, 'matrix': {}}
-
+    #
     # copy first the "meta" information part
+    # ======================================
     rebased_libsvm_file_representation['meta'] = libsvm_file_representation['meta'].copy()
     
     # adjust elements to default configuration
@@ -219,12 +227,8 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
             label_index_delta = -1
     else:
         label_index_delta = 0
-            
-    # copy entries which are identified as "label" lines (ie. key is an int)
-    for label_index, value in libsvm_file_representation['matrix'].items():
-        rebased_libsvm_file_representation['matrix'][label_index + label_index_delta] = value.copy()
-            
-    # rebase features
+        
+    # should we rebase features
     if source_feature_one_based != target_feature_one_based:
         
         # we have to rebase the features
@@ -236,6 +240,17 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
             # rebase from one_based to zero_based
             rebased_libsvm_file_representation['meta']['feature_one_based'] = 0
             feature_index_delta = -1
+    else:
+        feature_index_delta = 0   
+        
+       
+            
+    if 'matrix' in libsvm_file_representation:
+        
+        # copy entries which are identified as "label" lines (ie. key is an int)
+        for label_index, value in libsvm_file_representation['matrix'].items():
+            rebased_libsvm_file_representation['matrix'][label_index + label_index_delta] = value.copy()
+
             
         # iterate on entries which are identified as "label" lines
         # TODO: should use "feature vector" variable and replay TEST CASE
@@ -245,6 +260,26 @@ def rebase_libsvm_file_representation (libsvm_file_representation, target_featur
             for feature_index,value in feature_vector.items():
                 rebased_feature_vector[feature_index + feature_index_delta]=value
             rebased_libsvm_file_representation['matrix'][label_index] = rebased_feature_vector
+                
+    if 'vectors' in libsvm_file_representation:
+        # rebuild a new list elements containing rebased vectors
+        rebased_vector_list = []
+        for labeled_vector in libsvm_file_representation['vectors']:
+            label, feature_vector = labeled_vector
+
+            if label is not None:
+                rebased_label = label + label_index_delta
+            else:
+                rebased_label = None
+            
+            rebased_feature_vector={}
+            for feature_index,value in feature_vector.items():
+                rebased_feature_vector[feature_index + feature_index_delta]=value                
+                
+            rebased_labeled_vector = (rebased_label, rebased_feature_vector)
+            rebased_vector_list.append(rebased_labeled_vector)
+            
+        rebased_libsvm_file_representation['vectors'] = rebased_vector_list
                         
         
     return rebased_libsvm_file_representation
@@ -435,17 +470,51 @@ class moduleTestCases (unittest.TestCase):
             'feature_dim': 3,
             'feature_one_based': 0,
             'label_one_based': 0,                      
-        },
+            },
         'matrix': {
             0: {0: 1.1, 1: 1.2, 2:1.3},
             1: {0: 2.1, 2:2.3}
-        }
-    }    
+            }
+        }    
         
         rebased_sample = rebase_libsvm_file_representation(self._zero_based_feature_and_zero_based_label_sample,
                                                     target_feature_one_based=False,
                                                     target_label_one_based=False)      
         self.assertEqual(unchanged_rebased_zero_based_feature_and_zero_based_label_sample, rebased_sample)
+        
+    def test_rebase_libsvm_file_representation_4 (self):
+        
+        one_based_vector_sample = {
+        'meta': {
+            'num_labels': 2,
+            'feature_dim': 3,
+            'feature_one_based': 1,
+            'label_one_based': 1,                      
+            },
+        'vectors': [
+            (1, {1: 1.1, 2: 1.2, 3:1.3}),
+            (2, {1: 2.1, 3:2.3})
+            ]
+        }
+        
+        zero_based_vector_sample = {
+        'meta': {
+            'num_labels': 2,
+            'feature_dim': 3,
+            'feature_one_based': 0,
+            'label_one_based': 0,                      
+            },
+        'vectors': [
+            (0, {0: 1.1, 1: 1.2, 2:1.3}),
+            (1, {0: 2.1, 2:2.3})
+            ]
+        }          
+        
+        rebased_sample = rebase_libsvm_file_representation(one_based_vector_sample,
+                                                    target_feature_one_based=False,
+                                                    target_label_one_based=False)      
+        self.assertEqual(zero_based_vector_sample, rebased_sample)
+        
 
 if __name__ == '__main__':
     
