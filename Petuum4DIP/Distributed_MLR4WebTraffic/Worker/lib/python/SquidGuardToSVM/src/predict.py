@@ -31,8 +31,15 @@ The dictionary representing a libsvm_file will have (eventually) the following k
     }
     [matrix] = {
     
-        [feature_0]={ [label_0]:value_0, [label_1]:value_1 ...}
+        [label_0]={ [feature_0]:value_0, [feature_1]:value_1 ...}
     }
+    
+    [vectors] = [
+        # tuple (label, feature vector)
+        # label is None if not provided
+         
+        (label, { [feature_0]:value_0, [feature_1]:value_1 ...})
+    ]
 
 '''
 def libsvm_meta_attribute_string_to_dict (libsvm_meta_attribute_line):
@@ -56,15 +63,15 @@ def libsvm_feature_string_to_dict (libsvm_feature_line):
     
     return (feature_weigth_dict)
 
-def labeled_libsvm_vector_to_label_and_dict (labeled_libsvm_line):
+def labeled_libsvm_vector_to_label_and_sparse_vector (labeled_libsvm_line):
     
     label_string, feature_weigth_string = labeled_libsvm_line.split(maxsplit = 1)
 
     label = int(label_string)
     
-    feature_weigth_dict = libsvm_feature_string_to_dict (feature_weigth_string)
+    feature_weigth_sparse_vector = libsvm_feature_string_to_dict (feature_weigth_string)
    
-    return (label, feature_weigth_dict)
+    return (label, feature_weigth_sparse_vector)
 
 
 
@@ -72,7 +79,7 @@ def labeled_libsvm_vector_to_label_and_dict (labeled_libsvm_line):
 # Read a libsvm file with meta info
 #
 
-def read_libsvm_matrix_file (libsvm_file_name):
+def read_libsvm_vectors_file (libsvm_file_name):
     
     file_content_list = []
     
@@ -85,19 +92,21 @@ def read_libsvm_matrix_file (libsvm_file_name):
                 break
             line = cleanup_string_read_from_file(line)
             
-            content = labeled_libsvm_vector_to_label_and_dict (line)
+            # TODO: we assume that the current line is labeled
+            # This is only the case when this we this is a training line 
+            content = labeled_libsvm_vector_to_label_and_sparse_vector (line)
             file_content_list.append (content)
         
     return (file_content_list)    
     
 
     
-def read_libsvm_meta_file (libsvm_file_name):
+def read_libsvm_meta_file (libsvm_meta_file_name):
     '''
     Reads the "meta" annex file used by Petuum
     '''    
     
-    libsvm_meta_file_name = libsvm_file_name + '.meta'
+
     
     libsvm_meta_data = {}
         
@@ -115,17 +124,19 @@ def read_libsvm_meta_file (libsvm_file_name):
         
     return (libsvm_meta_data)
 
-def read_libsvm_file (libsvm_file_name):
+def read_petuum_libsvm_file (libsvm_file_name):
     '''
-    Reads the "data" (matrix)
+    Reads the "data" (list of vectors)
     '''    
     
-    libsvm_parsed_data = {}
+    libsvm_representation = {}
     
-    libsvm_parsed_data['matrix'] = read_libsvm_matrix_file (libsvm_file_name)
-    libsvm_parsed_data['meta'] = read_libsvm_meta_file (libsvm_file_name)
+    libsvm_meta_file_name = libsvm_file_name + '.meta'
+    libsvm_representation['meta'] = read_libsvm_meta_file (libsvm_meta_file_name)
+    libsvm_representation['vectors'] = read_libsvm_vectors_file(libsvm_file_name)
+
     
-    return libsvm_parsed_data
+    return libsvm_representation
 
 def cleanup_string_read_from_file (line):
     '''
@@ -139,7 +150,7 @@ def cleanup_string_read_from_file (line):
 # Read a weight matrix file
 #
     
-def read_peetuum_mlr_weight_file (weight_file_name):
+def read_peetuum_mlr_weight_matrix_file (weight_file_name):
     
     weight_file_representation = { 'meta': {}, 'matrix': {} }
     
@@ -322,29 +333,29 @@ def main():
     #
     # validate results
     
-    petuum_mlr_computed_label_weights_representation = read_peetuum_mlr_weight_file (args.weitghFile)
+    petuum_mlr_computed_label_weights_representation = read_peetuum_mlr_weight_matrix_file(args.weitghFile)
     rebased_weights_representation = rebase_libsvm_file_representation (petuum_mlr_computed_label_weights_representation,
                                                                         target_feature_one_based=_feature_one_based,
                                                                         target_label_one_based=_label_one_based)
-    test_sample_representation = read_libsvm_file (args.libSVMFile)
+    test_sample_representation = read_petuum_libsvm_file(args.libSVMFile)
     rebased_test_sample_representation = rebase_libsvm_file_representation (test_sample_representation,
                                                                             target_feature_one_based=_feature_one_based,
                                                                             target_label_one_based=_label_one_based)
     
     test_sample_line_number = 1
-    for test_sample in rebased_test_sample_representation['matrix']:
-        sample_label_index, sample_feature_vector = test_sample
+    for test_sample in rebased_test_sample_representation['vectors']:
+        sample_label_index, sample_feature_sparse_vector = test_sample
         
         print ('Checking test sample line # {} which has label index {}'.format(test_sample_line_number, sample_label_index))
         
-        predicted_label_index = predict_label_index (feature_sparse_vector = sample_feature_vector,
+        predicted_label_index = predict_label_index (feature_sparse_vector = sample_feature_sparse_vector,
                                                      petuum_mlr_computed_weight_representation = rebased_weights_representation,
                                                      one_based = args.oneBased)
         
         if predicted_label_index == sample_label_index:
             print ('\tMATCHED label prediction')
         else:
-            print ('\t=== MISSED !!! label prediction')
+            print ('\t=== MISSED !!! label prediction. Predicted index is {} while sample index was {}'. format(predicted_label_index, sample_label_index))
 
         
         test_sample_line_number += 1
