@@ -515,6 +515,11 @@ class moduleTestCases (unittest.TestCase):
                                                     target_label_one_based=False)      
         self.assertEqual(zero_based_vector_sample, rebased_sample)
         
+        rebased_sample = rebase_libsvm_file_representation(zero_based_vector_sample,
+                                                           target_feature_one_based=True,
+                                                           target_label_one_based=True)      
+        self.assertEqual(one_based_vector_sample, rebased_sample)        
+        
 
 if __name__ == '__main__':
     
