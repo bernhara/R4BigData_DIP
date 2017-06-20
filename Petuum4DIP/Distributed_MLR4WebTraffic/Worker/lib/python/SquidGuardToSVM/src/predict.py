@@ -5,9 +5,12 @@
 import sys
 
 import argparse
+import operator
 
 import logging
-logging.basicConfig (level=logging.WARNING)
+# FIXME: we force all log to go to stderr. This should be configured in a logger configuration file
+logging.basicConfig (stream=sys.stderr, level=logging.WARNING)
+_logger = logging.getLogger("predict")
 
 import unittest
 
@@ -298,7 +301,7 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
     # trace 
     for label_index in predicted_labelization_sparse_vector.keys():
         prediction_for_this_label = predicted_labelization_sparse_vector[label_index]
-        print ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, prediction_for_this_label))
+        _logger.debug ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, prediction_for_this_label))
         
     # predict label by getting the label index having the greatest factor
     geatest_factor = -sys.float_info.max
@@ -310,9 +313,15 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
             highest_label_index = label_index
             
     predicted_label_index = highest_label_index
+    _logger.debug ('\t\tPredicted label index {} with score : {}'.format(predicted_label_index, geatest_factor))
     
-    print ('\t\tPredicted label index {} with score : {}'.format(predicted_label_index, geatest_factor))
-    
+    # The same, sorting prediction result    
+    predicted_labelization_vector_elements_list = predicted_labelization_sparse_vector.items()
+    sorted_predicted_labelization_vector_elements_list = sorted(predicted_labelization_vector_elements_list,
+                                                                key=operator.itemgetter(1),
+                                                                reverse=True)
+    _logger.debug ('\t\tPrediction order for each feature: {}'.format(sorted_predicted_labelization_vector_elements_list))
+
     return (predicted_label_index)
 
 def main():
@@ -355,7 +364,7 @@ def main():
         _feature_one_based = True        
         _label_one_based = True
     else:
-        print ('ZERO BASE unsupported')
+        _logger.critical ('ZERO BASE unsupported')
         sys.exit(1)
         _feature_one_based = False        
         _label_one_based = False      
@@ -378,32 +387,32 @@ def main():
                                                                             target_label_one_based=_label_one_based)
     
     test_sample_line_number = 1
+    matched_predictions = 0
+    unmatched_predictions = 0
     for test_sample in rebased_test_sample_representation['vectors']:
         sample_label_index, sample_feature_sparse_vector = test_sample
         
-        print ('Checking test sample line # {} which has label index {}'.format(test_sample_line_number, sample_label_index))
+        _logger.debug ('Checking test sample line # {} which has label index {}'.format(test_sample_line_number, sample_label_index))
         
         predicted_label_index = predict_label_index (feature_sparse_vector = sample_feature_sparse_vector,
                                                      petuum_mlr_computed_weight_representation = rebased_weights_representation,
                                                      one_based = args.oneBased)
         
         if predicted_label_index == sample_label_index:
-            print ('\tMATCHED label prediction')
+            _logger.debug ('\tMATCHED label prediction')
+            matched_predictions += 1
         else:
-            print ('\t=== MISSED !!! label prediction. Predicted index is {} while sample index was {}'. format(predicted_label_index, sample_label_index))
+            _logger.debug ('\t=== MISSED !!! label prediction. Predicted index is {} while sample index was {}'. format(predicted_label_index, sample_label_index))
+            unmatched_predictions += 1
 
         
         test_sample_line_number += 1
+        
+    sample_size = test_sample_line_number - 1
+    print ("Sample size: {}".format(sample_size))
+    print ("\tamount of matched predictions: {}".format(matched_predictions))
+    print ("\tamount of unmatched predictions: {}".format(unmatched_predictions))    
 
-#     label_index_to_check = 0
-#     train_line_to_check = train_line_list[0]
-    
-#     label_weight_attribute_dict = petuum_mlr_computed_label_weights[label_index_to_check]
-#     train_label, train_attribute_dict = labeled_libsvm_vector_to_label_and_dict (train_line_to_check, label_one_based = True, feature_one_based = True)
-#     
-#     computed_factor = libsvm_data_scalar_vector_product (train_attribute_dict, label_weight_attribute_dict)
-#     
-#     print (computed_factor)
 
 #
 # TEST CASES
