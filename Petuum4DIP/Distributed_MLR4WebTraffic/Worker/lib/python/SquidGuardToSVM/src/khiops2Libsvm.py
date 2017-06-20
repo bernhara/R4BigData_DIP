@@ -49,14 +49,30 @@ _last_allocated_feature_index = 0
 _label_name_to_index_table = {}
 _last_allocated_label_index = 0
 
+class LabelToIndexConverter:
+    
+    def __init__(self):
+        self._last_allocated_label_index = 0
+        self._label_index_table = {}
+        
+    def getIndex (self, label_name):
+        if not label_name in self._label_index_table:
+            self._label_index_table[label_name] = self._last_allocated_feature_index
+            self._last_allocated_feature_index += 1
+            
+        index_for_label = self._label_index_table[label_name]
+        return index_for_label   
+
 _input_data_libsvm_representation = []
+
+_feature_index_table = LabelToIndexConverter
 
 def feature_name_and_value_to_index (feature_name, feature_string_value):
     global _feature_table
     global _last_allocated_feature_index
     
     if not feature_name in _feature_table:
-        _feature_table[feature_name] = {}
+        _feature_table[feature_name] = LabelToIndexConverter()
     
     possible_feature_values_table = _feature_table[feature_name]
     
