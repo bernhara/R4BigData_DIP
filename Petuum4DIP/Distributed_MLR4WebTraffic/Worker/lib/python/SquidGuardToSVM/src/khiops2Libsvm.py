@@ -56,8 +56,8 @@ class LabelToIndexConverter:
             self._label_classes[label_class] = {}
             
         if not label_name in self._label_classes[label_class]:
-            self._label_classes[label_class][label_name] = self._last_allocated_feature_index
-            self._last_allocated_feature_index += 1
+            self._label_classes[label_class][label_name] = self._last_allocated_label_index
+            self._last_allocated_label_index += 1
             
         index_for_label = self._label_classes[label_class][label_name]
         return index_for_label   
@@ -167,8 +167,15 @@ class moduleTestCases (unittest.TestCase):
     def test3 (self):
     
         index = feature_instance_to_index ('CapSurface', 'SMOOTH')
-        self.assertEqual(index, 2)             
-
+        self.assertEqual(index, 2)
+        
+    def test4 (self):
+        
+        index =  label_instance_to_index ('Class', 'EDIBLE')
+        self.assertEqual(index, 0)  
+        
+        index =  label_instance_to_index ('Class', 'POISONOUS')
+        self.assertEqual(index, 1)  
 
 def main():
     
