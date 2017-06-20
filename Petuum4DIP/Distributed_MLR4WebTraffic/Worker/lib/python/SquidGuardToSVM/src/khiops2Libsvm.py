@@ -60,7 +60,11 @@ class LabelToIndexConverter:
             self._last_allocated_label_index += 1
             
         index_for_label = self._label_classes[label_class][label_name]
-        return index_for_label   
+        return index_for_label
+    
+    def getNbLabels(self):
+        nbLabels = self._last_allocated_label_index - 1
+        return nbLabels
 
 _input_data_libsvm_representation = []
 
@@ -101,7 +105,6 @@ def add_khiops_data_line_to_libsvm_representation (khiops_data_line):
         feature_value_index = feature_instance_to_index (feature_name, feature_string_value)
         features_values_table[feature_value_index] = 1
         
-    # FIXME: compute label_index!!!
     label_class_name = _label_names_list[0]
     label_index = label_instance_to_index(label_class_name, label_instance_value)
     line_representation = (label_index, features_values_table)
@@ -114,11 +117,16 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
     global _input_data_libsvm_representation
     global _feature_names_list
     global _label_names_list
-
+    global _label_index_table
+    global _feature_index_table
+    
+    
+    
     _input_data_libsvm_representation = {
         'meta' : {
             'feature_one_based' : 0,
-            'label_one_based' : 0
+            'label_one_based' : 0,
+            'format' : 'libsvm'
         },
         'vectors' : []                   
     }
@@ -140,8 +148,12 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
             add_khiops_data_line_to_libsvm_representation (line)
             
     # TODO: save resulting representation
-        
-
+    nbLabels = _label_index_table.getNbLabels()
+    nbFeatures = _feature_index_table.getNbLabels()
+    
+    _input_data_libsvm_representation['meta']['feature_dim'] = nbFeatures
+    _input_data_libsvm_representation['meta']['num_labels'] = nbLabels
+    
 #
 # TEST CASES
 # ==========
