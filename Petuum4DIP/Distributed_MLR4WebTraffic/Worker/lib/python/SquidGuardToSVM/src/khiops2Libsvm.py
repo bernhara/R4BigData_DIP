@@ -41,71 +41,69 @@ The dictionary representing a libsvm_file will have (eventually) the following k
 
 '''
 
-_feature_names_list = []
 
-_feature_table = {}
-_last_allocated_feature_index = 0
-
-_label_name_to_index_table = {}
-_last_allocated_label_index = 0
 
 class LabelToIndexConverter:
     
     def __init__(self):
         self._last_allocated_label_index = 0
-        self._label_index_table = {}
+        self._label_classes = {}
         
-    def getIndex (self, label_name):
-        if not label_name in self._label_index_table:
-            self._label_index_table[label_name] = self._last_allocated_feature_index
+    def getIndex (self, label_class, label_name):
+        
+        # if it is the first time we see this class, init a new table for this class
+        if not label_class in self._label_classes:
+            self._label_classes[label_class] = {}
+            
+        if not label_name in self._label_classes[label_class]:
+            self._label_classes[label_class][label_name] = self._last_allocated_feature_index
             self._last_allocated_feature_index += 1
             
-        index_for_label = self._label_index_table[label_name]
+        index_for_label = self._label_classes[label_class][label_name]
         return index_for_label   
 
 _input_data_libsvm_representation = []
 
-_feature_index_table = LabelToIndexConverter
+_feature_names_list = []
+_feature_index_table = LabelToIndexConverter()
 
-def feature_name_and_value_to_index (feature_name, feature_string_value):
-    global _feature_table
-    global _last_allocated_feature_index
+def feature_instance_to_index (feature_name, feature_string_value):
+    global _feature_index_table
     
-    if not feature_name in _feature_table:
-        _feature_table[feature_name] = LabelToIndexConverter()
-    
-    possible_feature_values_table = _feature_table[feature_name]
-    
-    if not feature_string_value in possible_feature_values_table:
-        possible_feature_values_table[feature_string_value] = _last_allocated_feature_index
-        _last_allocated_feature_index += 1
-        
-    feature_index_for_feature_string_value = possible_feature_values_table[feature_string_value]
+    feature_index_for_feature_string_value = _feature_index_table.getIndex(feature_name, feature_string_value)
     
     return feature_index_for_feature_string_value
+
+_label_names_list = []
+_label_index_table = LabelToIndexConverter()
+
+def label_instance_to_index (label_class_name, label_instance_string_value):
+    global _label_index_table
+    
+    index = _label_index_table.getIndex(label_class_name, label_instance_string_value)
+    
+    return index
     
     
-    
-def label_value_name_to_zero_one (label_name):
-    global _label_name_to_index_table
-    
-    
+   
 def add_khiops_data_line_to_libsvm_representation (khiops_data_line):
     
     global _input_data_libsvm_representation
-    global _feature_names_list    
+    global _feature_names_list 
+    global _label_names_list   
     
     khiops_data_line_as_list = khiops_data_line.split()
-    label_value = khiops_data_line_as_list[0]
+    label_instance_value = khiops_data_line_as_list[0]
     feature_string_value_list = khiops_data_line_as_list[1:]
     
     features_values_table = {}
     for (feature_name, feature_string_value) in zip(_feature_names_list, feature_string_value_list):
-        feature_value_index = feature_name_and_value_to_index (feature_name, feature_string_value)
+        feature_value_index = feature_instance_to_index (feature_name, feature_string_value)
         features_values_table[feature_value_index] = 1
         
     # FIXME: compute label_index!!!
-    label_index = 1
+    label_class_name = _label_names_list[0]
+    label_index = label_instance_to_index(label_class_name, label_instance_value)
     line_representation = (label_index, features_values_table)
         
     _input_data_libsvm_representation['vectors'].append(line_representation)
@@ -115,7 +113,7 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
     
     global _input_data_libsvm_representation
     global _feature_names_list
-    
+    global _label_names_list
 
     _input_data_libsvm_representation = {
         'meta' : {
@@ -130,6 +128,7 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
         header_line = khiops_file.readline()
         headers_as_list = header_line.split()
         
+        _label_names_list = headers_as_list[:1]
         _feature_names_list = headers_as_list[1:]
         
         while True:
@@ -151,23 +150,23 @@ class moduleTestCases (unittest.TestCase):
     
     def test1 (self):
     
-        index = feature_name_and_value_to_index ('CapShape', 'CONVEX')
+        index = feature_instance_to_index ('CapShape', 'CONVEX')
         self.assertEqual(index, 0)
         
-        index = feature_name_and_value_to_index ('CapShape', 'FLAT')
+        index = feature_instance_to_index ('CapShape', 'FLAT')
         self.assertEqual(index, 1)
         
-        index = feature_name_and_value_to_index ('CapSurface', 'SMOOTH')
+        index = feature_instance_to_index ('CapSurface', 'SMOOTH')
         self.assertEqual(index, 2)        
         
     def test2 (self):
     
-        index = feature_name_and_value_to_index ('CapShape', 'CONVEX')
+        index = feature_instance_to_index ('CapShape', 'CONVEX')
         self.assertEqual(index, 0)
         
     def test3 (self):
     
-        index = feature_name_and_value_to_index ('CapSurface', 'SMOOTH')
+        index = feature_instance_to_index ('CapSurface', 'SMOOTH')
         self.assertEqual(index, 2)             
 
 
