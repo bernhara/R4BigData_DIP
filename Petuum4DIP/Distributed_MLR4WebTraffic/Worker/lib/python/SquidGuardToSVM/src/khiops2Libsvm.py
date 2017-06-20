@@ -64,10 +64,10 @@ def feature_name_and_value_to_index (feature_name, feature_string_value):
         possible_feature_values_table[feature_string_value] = _last_allocated_feature_index
         _last_allocated_feature_index += 1
         
-        
-    feature_index = possible_feature_values_table[feature_string_value]
-    return feature_index
-        
+    feature_index_for_feature_string_value = possible_feature_values_table[feature_string_value]
+    
+    return feature_index_for_feature_string_value
+    
     
     
 def label_value_name_to_zero_one (label_name):
@@ -77,35 +77,42 @@ def label_value_name_to_zero_one (label_name):
 def add_khiops_data_line_to_libsvm_representation (khiops_data_line):
     
     global _input_data_libsvm_representation
+    global _feature_names_list    
     
     khiops_data_line_as_list = khiops_data_line.split()
     label_value = khiops_data_line_as_list[0]
+    feature_string_value_list = khiops_data_line_as_list[1:]
     
-    features_values = []
-    for (feature_name, feature_value) in zip(feature_names_list, khiops_data_line_as_list[1:]):
-        feature_value_index = feature_name_and_value_to_index (feature_name, feature_value)
-        features_values[feature_value_index] = 1
+    features_values_table = {}
+    for (feature_name, feature_string_value) in zip(_feature_names_list, feature_string_value_list):
+        feature_value_index = feature_name_and_value_to_index (feature_name, feature_string_value)
+        features_values_table[feature_value_index] = 1
         
-         _input_data_libsvm_representation['vectors'].app
+    # FIXME: compute label_index!!!
+    label_index = 1
+    line_representation = (label_index, features_values_table)
+        
+    _input_data_libsvm_representation['vectors'].append(line_representation)
         
 
 def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
     
     global _input_data_libsvm_representation
+    global _feature_names_list
     
 
     _input_data_libsvm_representation = {
         'meta' : {
-            ['feature_one_based'] : 0,
-            ['label_one_based'] : 0
+            'feature_one_based' : 0,
+            'label_one_based' : 0
         },
-        'matrix' : {}                       
+        'vectors' : []                   
     }
     
     with open (khiops_file_name, 'r') as khiops_file:
         
         header_line = khiops_file.readline()
-        headers_as_list = features_line.split()
+        headers_as_list = header_line.split()
         
         _feature_names_list = headers_as_list[1:]
         
@@ -114,15 +121,11 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
             line = khiops_file.readline()
             if not line:
                 break
-            line = cleanup_string_read_from_file(line)
             
-            # TODO: we assume that the current line is labeled
-            # This is only the case when this we this is a training line 
-            content = labeled_libsvm_vector_to_label_and_sparse_vector (line)
-            file_content_list.append (content)
+            add_khiops_data_line_to_libsvm_representation (line)
+            
+    # TODO: save resulting representation
         
-    return (file_content_list)    
-
 
 #
 # TEST CASES
@@ -157,23 +160,27 @@ def main():
     global _feature_one_based
     global _label_one_based
     
+    # TODO: rewrite the comment
     parser = argparse.ArgumentParser(description='Generates a LIB SVM formated file for Squid Access Logs which have been labeled by squidGuard.')
-    parser.add_argument("-s", "--squidAccessLogFile", metavar='<squid access log>', type=str, dest="squidAccessLogFile", required=True, 
-                        help='The Squid access log file.')
-    parser.add_argument("-g", "--squidGuardFile", metavar='<squidGuard out>', type=str, dest="squidGuardFile", required=True,
-                        help='The resulting file after applying squidGuard to <squid access log>.')
-    parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=str, dest="libSVMFile", required=True,
-                        help='''The resulting "LIB SVM" formated file, containing the classified content.
-    The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
-    These 2 files can be used as input to Petuum's MRL''')
-    parser.add_argument("-c", "--squidGuardConf", metavar='<squidGuard configuration file>', type=str, dest="squidGuardConfigurationFile", required=True,
-                        help='The squidGuard configuration file used to generate <squidGuard out>.')
-    parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDumpFile", required=True,
-                        help='Generated file, containing the list of all matched categories with their LibSVM index. Each category index is considered as a LibSVM label.')
+#     parser.add_argument("-s", "--squidAccessLogFile", metavar='<squid access log>', type=str, dest="squidAccessLogFile", required=True, 
+#                         help='The Squid access log file.')
+#     parser.add_argument("-g", "--squidGuardFile", metavar='<squidGuard out>', type=str, dest="squidGuardFile", required=True,
+#                         help='The resulting file after applying squidGuard to <squid access log>.')
+#     parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=str, dest="libSVMFile", required=True,
+#                         help='''The resulting "LIB SVM" formated file, containing the classified content.
+#     The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
+#     These 2 files can be used as input to Petuum's MRL''')
+#     parser.add_argument("-c", "--squidGuardConf", metavar='<squidGuard configuration file>', type=str, dest="squidGuardConfigurationFile", required=True,
+#                         help='The squidGuard configuration file used to generate <squidGuard out>.')
+#     parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDumpFile", required=True,
+#                         help='Generated file, containing the list of all matched categories with their LibSVM index. Each category index is considered as a LibSVM label.')
     parser.add_argument("--featureOneBased", action='store_true', dest="featureOneBased", 
                         help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
                         help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
+
+    parser.add_argument("-k", "--khiopsInputFile", metavar='<what???>', type=str, dest="khiopsInputFile", required=True, 
+                        help='The input file use as Khiops input.')
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
     args = parser.parse_args()
@@ -192,13 +199,7 @@ def main():
         logging.getLogger().setLevel (logging.DEBUG)
     
 
-    buildCategoryTable (args.squidGuardConfigurationFile)
-    dumpCategoryTable (args.categoriesDumpFile)
-    
-    squidAccessLogFileName = args.squidAccessLogFile
-    squidGuardFileName = args.squidGuardFile
-    libSVMFileName = args.libSVMFile
-    squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName)
+    khiopsFile2LibSvmFile (args.khiopsInputFile, "/tmp")
 
 if __name__ == '__main__':
-    pass
+    main()
