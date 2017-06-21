@@ -163,7 +163,7 @@ def save_libsvm_representation_to_petuum_file (libsvm_represetation, libsvm_file
     with open (libsvm_meta_file_name, 'w') as libsvm_meta_file:
         
         for k,v in libsvm_represetation['meta'].items():
-            petuum_meta_attribute_line = '{0}:{1}'.format(k, v)
+            petuum_meta_attribute_line = '{0}: {1}'.format(k, v)
             
             print(petuum_meta_attribute_line, file=libsvm_meta_file)
             
