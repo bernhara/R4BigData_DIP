@@ -141,6 +141,33 @@ def read_petuum_libsvm_file (libsvm_file_name):
     
     return libsvm_representation
 
+def save_libsvm_representation_to_petuum_file (libsvm_represetation, libsvm_file_name):
+    
+    # write vectors
+    with open (libsvm_file_name, 'w') as libsvm_file:
+        
+        if 'vectors' in libsvm_represetation:
+            for vector in libsvm_represetation['vectors']:
+                label, feature_dict = vector
+                
+                label_string = '{0:d}'.format(label)
+                features_string = ' '.join('{0:d}:{1:+f}'.format(k, v) for k,v in feature_dict.items())
+                
+                libsvm_line = '{0:s} {1:s}'.format(label_string, features_string)
+                
+                print(libsvm_line, file=libsvm_file)
+    
+    # write meta part
+    libsvm_meta_file_name = libsvm_file_name + '.meta'
+    
+    with open (libsvm_meta_file_name, 'w') as libsvm_meta_file:
+        
+        for k,v in libsvm_represetation['meta'].items():
+            petuum_meta_attribute_line = '{0}:{1}'.format(k, v)
+            
+            print(petuum_meta_attribute_line, file=libsvm_meta_file)
+            
+
 def cleanup_string_read_from_file (line):
     '''
     to prevent file format problems (Linix/DOS), with string eventual end line

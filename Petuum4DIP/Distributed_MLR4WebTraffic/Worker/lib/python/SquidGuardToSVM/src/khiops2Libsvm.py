@@ -14,6 +14,8 @@ import unittest
 import logging
 logging.basicConfig (level=logging.WARNING)
 
+from predict import save_libsvm_representation_to_petuum_file
+
 '''
 The dictionary representing a libsvm_file will have (eventually) the following keys:
 
@@ -154,6 +156,8 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
     _input_data_libsvm_representation['meta']['feature_dim'] = nbFeatures
     _input_data_libsvm_representation['meta']['num_labels'] = nbLabels
     
+    save_libsvm_representation_to_petuum_file (_input_data_libsvm_representation, libsvm_file_name_prefix)
+    
 #
 # TEST CASES
 # ==========
@@ -200,10 +204,7 @@ def main():
 #                         help='The Squid access log file.')
 #     parser.add_argument("-g", "--squidGuardFile", metavar='<squidGuard out>', type=str, dest="squidGuardFile", required=True,
 #                         help='The resulting file after applying squidGuard to <squid access log>.')
-#     parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=str, dest="libSVMFile", required=True,
-#                         help='''The resulting "LIB SVM" formated file, containing the classified content.
-#     The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
-#     These 2 files can be used as input to Petuum's MRL''')
+
 #     parser.add_argument("-c", "--squidGuardConf", metavar='<squidGuard configuration file>', type=str, dest="squidGuardConfigurationFile", required=True,
 #                         help='The squidGuard configuration file used to generate <squidGuard out>.')
 #     parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDumpFile", required=True,
@@ -215,6 +216,12 @@ def main():
 
     parser.add_argument("-k", "--khiopsInputFile", metavar='<what???>', type=str, dest="khiopsInputFile", required=True, 
                         help='The input file use as Khiops input.')
+    
+    parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=str, dest="libSVMFile", required=True,
+                        help='''The resulting "LIB SVM" formated file, containing the translated content.
+    An additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's algorithms.
+    For example, these 2 files can be used as input to Petuum's MRL''')
+
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
     args = parser.parse_args()
@@ -233,7 +240,8 @@ def main():
         logging.getLogger().setLevel (logging.DEBUG)
     
 
-    khiopsFile2LibSvmFile (args.khiopsInputFile, "/tmp")
+    khiopsFile2LibSvmFile (args.khiopsInputFile, args.libSVMFile)
+    
 
 if __name__ == '__main__':
     main()
