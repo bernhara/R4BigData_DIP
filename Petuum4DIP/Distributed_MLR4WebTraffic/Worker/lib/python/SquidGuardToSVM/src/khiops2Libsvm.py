@@ -197,15 +197,6 @@ def main():
     
     # TODO: rewrite the comment
     parser = argparse.ArgumentParser(description='Generates a LIB SVM formated file for Squid Access Logs which have been labeled by squidGuard.')
-#     parser.add_argument("-s", "--squidAccessLogFile", metavar='<squid access log>', type=str, dest="squidAccessLogFile", required=True, 
-#                         help='The Squid access log file.')
-#     parser.add_argument("-g", "--squidGuardFile", metavar='<squidGuard out>', type=str, dest="squidGuardFile", required=True,
-#                         help='The resulting file after applying squidGuard to <squid access log>.')
-
-#     parser.add_argument("-c", "--squidGuardConf", metavar='<squidGuard configuration file>', type=str, dest="squidGuardConfigurationFile", required=True,
-#                         help='The squidGuard configuration file used to generate <squidGuard out>.')
-#     parser.add_argument("-k", "--categoriesDump", metavar='<category dump file>', type=str, dest="categoriesDumpFile", required=True,
-#                         help='Generated file, containing the list of all matched categories with their LibSVM index. Each category index is considered as a LibSVM label.')
     parser.add_argument("--featureOneBased", action='store_true', dest="featureOneBased", 
                         help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
