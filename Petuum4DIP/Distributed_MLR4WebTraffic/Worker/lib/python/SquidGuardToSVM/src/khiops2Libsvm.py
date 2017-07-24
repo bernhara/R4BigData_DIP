@@ -2,6 +2,7 @@
 
 # coding: utf-8
 
+import os
 import argparse
 
 import unittest
@@ -64,6 +65,17 @@ class LabelToIndexConverter:
     def getNbLabels(self):
         nbLabels = self._last_allocated_label_index - 1
         return nbLabels
+    
+    def dump(self, separator = os.linesep):
+        
+        dump_string = ''
+        for label_class, label_names in self._label_classes.items():
+            
+            for label_name, label_index in label_names.items():
+                dump_string = dump_string + '%d: %s_%s%s' % (label_index, label_class, label_name, separator)
+                
+        return dump_string
+                
 
 _input_data_libsvm_representation = []
 
@@ -155,6 +167,27 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
     
     save_libsvm_representation_to_petuum_file (_input_data_libsvm_representation, libsvm_file_name_prefix)
     
+    
+def dumpLabelMappingToFile (dumpFileName):
+    
+    global _feature_names_list 
+    global _label_names_list
+    
+    with open (dumpFileName, 'w') as dumpFile:
+        
+        # Dump classes (labels)
+        label_dump = _label_index_table.dump()
+        
+        print('Labels (ie. Classes):', file=dumpFile)
+        print (label_dump, file=dumpFile)
+        
+        # Dump feature
+        feature_dump = _feature_index_table.dump()
+        
+        print('Features:', file=dumpFile)
+        print (feature_dump, file=dumpFile)        
+
+    
 #
 # TEST CASES
 # ==========
@@ -209,6 +242,8 @@ def main():
                         help='''The resulting "LIB SVM" formated file, containing the translated content.
     An additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's algorithms.
     For example, these 2 files can be used as input to Petuum's MRL''')
+    parser.add_argument("-m", "--dumpLabelMapping", metavar='<name of file to generate>', type=str, dest="dumpLabelMapping", required=False,
+                        help='''Contains a mapping between the literal names found in the input file and the values corresponding integers matching the LibSVM format.''')    
 
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
@@ -229,6 +264,9 @@ def main():
     
 
     khiopsFile2LibSvmFile (args.khiopsInputFile, args.libSVMFile)
+    
+    if (args.dumpLabelMapping):
+        dumpLabelMappingToFile (args.dumpLabelMapping)
     
 
 if __name__ == '__main__':
