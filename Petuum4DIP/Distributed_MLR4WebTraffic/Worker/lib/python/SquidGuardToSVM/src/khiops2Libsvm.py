@@ -1,11 +1,6 @@
 #! /usr/bin/env python3
 
-# coding: utf-8 
-
-# TdB
-import os
-import sys
-import hashlib
+# coding: utf-8
 
 import argparse
 
@@ -56,10 +51,12 @@ class LabelToIndexConverter:
         # if it is the first time we see this class, init a new table for this class
         if not label_class in self._label_classes:
             self._label_classes[label_class] = {}
+            logging.debug("Created a new label class name: %s" % label_class)
             
         if not label_name in self._label_classes[label_class]:
             self._label_classes[label_class][label_name] = self._last_allocated_label_index
             self._last_allocated_label_index += 1
+            logging.debug("Associated a new label index to label \"%s\" in class \"%s\": %d" % (label_name, label_class, self._label_classes[label_class][label_name]))
             
         index_for_label = self._label_classes[label_class][label_name]
         return index_for_label
