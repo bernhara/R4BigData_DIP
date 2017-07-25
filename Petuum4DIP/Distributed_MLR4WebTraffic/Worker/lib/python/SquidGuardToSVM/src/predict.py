@@ -141,7 +141,7 @@ def read_petuum_libsvm_file (libsvm_file_name):
     
     return libsvm_representation
 
-def save_libsvm_representation_to_petuum_file (libsvm_represetation, libsvm_file_name):
+def save_libsvm_representation_to_petuum_file (libsvm_represetation, libsvm_file_name, ordered_features = False):
     
     # write vectors
     with open (libsvm_file_name, 'w') as libsvm_file:
@@ -151,8 +151,12 @@ def save_libsvm_representation_to_petuum_file (libsvm_represetation, libsvm_file
                 label, feature_dict = vector
                 
                 label_string = '{0:d}'.format(label)
-                features_string = ' '.join('{0:d}:{1:+f}'.format(k, v) for k,v in feature_dict.items())
                 
+                if ordered_features:
+                    features_string = ' '.join('{0:d}:{1:+f}'.format(k, feature_dict[k]) for k in sorted(feature_dict))
+                else:
+                    features_string = ' '.join('{0:d}:{1:+f}'.format(k, v) for k,v in feature_dict.items())
+              
                 libsvm_line = '{0:s} {1:s}'.format(label_string, features_string)
                 
                 print(libsvm_line, file=libsvm_file)
