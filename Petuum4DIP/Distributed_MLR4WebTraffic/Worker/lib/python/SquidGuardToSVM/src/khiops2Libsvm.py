@@ -63,7 +63,7 @@ class LabelToIndexConverter:
         return index_for_label
     
     def getNbLabels(self):
-        nbLabels = self._last_allocated_label_index - 1
+        nbLabels = self._last_allocated_label_index
         return nbLabels
     
     def dump(self, separator = os.linesep):
@@ -142,6 +142,7 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
         'vectors' : []                   
     }
     
+    nb_samples = 0
     with open (khiops_file_name, 'r') as khiops_file:
         
         header_line = khiops_file.readline()
@@ -157,15 +158,19 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
                 break
             
             add_khiops_data_line_to_libsvm_representation (line)
+            nb_samples += 1
             
     # TODO: save resulting representation
-    nbLabels = _label_index_table.getNbLabels()
-    nbFeatures = _feature_index_table.getNbLabels()
+    nb_labels = _label_index_table.getNbLabels()
+    nb_features = _feature_index_table.getNbLabels()
     
-    _input_data_libsvm_representation['meta']['feature_dim'] = nbFeatures
-    _input_data_libsvm_representation['meta']['num_labels'] = nbLabels
+    _input_data_libsvm_representation['meta']['feature_dim'] = nb_features
+    _input_data_libsvm_representation['meta']['num_labels'] = nb_labels
+    _input_data_libsvm_representation['meta']['num_train_total'] = nb_samples
+    _input_data_libsvm_representation['meta']['num_train_this_partition'] = nb_samples
+    _input_data_libsvm_representation['meta']['snappy_compressed'] = 0
     
-    save_libsvm_representation_to_petuum_file (_input_data_libsvm_representation, libsvm_file_name_prefix)
+    save_libsvm_representation_to_petuum_file (_input_data_libsvm_representation, libsvm_file_name_prefix, ordered_features = True)
     
     
 def dumpLabelMappingToFile (dumpFileName):
