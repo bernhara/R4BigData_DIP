@@ -118,6 +118,15 @@ void Softmax(std::vector<float>* vec) {
 
 # =======================================================================================================
 
+def Sigmoid (x):
+    
+    sigmoid_val = 1 / (1 + math.exp(-x))
+    
+    return sigmoid_val
+
+# =======================================================================================================
+
+
 def SparseDenseFeatureDotProduct(f1_feature_dict, f2_feature_dict):
     """Implements C++ function:
     
