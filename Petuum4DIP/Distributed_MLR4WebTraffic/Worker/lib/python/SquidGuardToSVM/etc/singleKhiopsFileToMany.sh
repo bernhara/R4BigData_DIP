@@ -48,9 +48,19 @@ do
     grep "${label}" "${bodyFile}" > "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}"
 done
 
+#
+# Shuffle each file
+#
 
+for label in ${label_list}
+do
+    cp "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}" "${tmp_dir}/to_shuffle"
+    shuf "${tmp_dir}/to_shuffle" > "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}"
+done
 
-
+#
+# Split each seperate file
+#
 
 for label in ${label_list}
 do
