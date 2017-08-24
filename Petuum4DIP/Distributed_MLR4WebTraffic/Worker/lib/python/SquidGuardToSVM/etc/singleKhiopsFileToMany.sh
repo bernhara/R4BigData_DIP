@@ -64,9 +64,23 @@ done
 
 for label in ${label_list}
 do
-    split --numeric-suffixes=1 --number=l/${nb_splits} "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}" "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}."
+    split --suffix-length=1 --numeric-suffixes=1 --number=l/${nb_splits} "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}" "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}."
 done
 
+#
+# create the samples
+#
 
+# should place on each split an equivalent proportion on each ONLY file.
+
+for i in `seq 1 $nb_splits`
+do
+    (
+	for label in ${label_list}
+	do
+	    cat "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}.$i"
+	done
+    ) > "${tmp_dir}/${fullKhiopsSrcFileBasename}.SAMPLE.$i"
+done
 
 
