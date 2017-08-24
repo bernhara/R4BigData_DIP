@@ -3,6 +3,12 @@
 HERE=`dirname "$0"`
 
 fullKhiopsSrcFile="$1"
+nb_splits="$2"
+
+if [ -z "${nb_splits}" ]
+then
+    nb_splits=1
+fi
 
 : ${label_list="EDIBLE POISONOUS"}
 : ${tmp_dir:="/tmp/ZZ"}
@@ -42,29 +48,14 @@ do
     grep "${label}" "${bodyFile}" > "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}"
 done
 
-function spltAndGenerateLearnTestValidateFiles ()
-{
-    #
-    # count the label distribution
-    #
-
-    src_file_prefix="$1"
-    dst_file_prefix="$2"
-    nb_splits=$3
-
-    for label in ${label_list}
-    do
-	in_file="${file_prefix}.${label}"
-	count=`wc -l "${in_file}"`
-	split_size=$(( $count / $nb_split ))
-
-	split --numeric-suffixes=1 --number=l/${nb_split} "${in_file}" "${dst_file_prefix}.${label}."
-    done
-
-}
 
 
 
+
+for label in ${label_list}
+do
+    split --numeric-suffixes=1 --number=l/${nb_splits} "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}" "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}."
+done
 
 
 
