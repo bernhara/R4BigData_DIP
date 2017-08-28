@@ -27,6 +27,26 @@ then
     sample_output_file_prefix="${fullKhiopsSrcFile}.SAMPLE.}"
 fi
 
+function ShuffleFile ()
+{
+    file_to_shuffle="$1"
+
+    cp "${file_to_shuffle}" "${tmp_dir}/to_shuffle"
+    shuf --output="${file_to_shuffle}" "${tmp_dir}/to_shuffle"
+}
+
+function zeroPadIntValue ()
+{
+    string_to_pad_with_zero="$1"
+
+    tmp="00000${string_to_pad_with_zero}"
+    padded_string="${tmp: -3}"
+
+    echo "${padded_string}"
+}
+
+
+
 mkdir -m 777 -p "${tmp_dir}"
 
 fullKhiopsSrcFileBasename=`basename "${fullKhiopsSrcFile}"`
@@ -53,7 +73,7 @@ sed -e \
 
 for label in ${label_list}
 do
-    grep "${label}" "${bodyFile}" > "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}"
+    grep "${label}" "${bodyFile}" > "${tmp_dir}/split.ONLY.${label}"
 done
 
 #
@@ -62,8 +82,7 @@ done
 
 for label in ${label_list}
 do
-    cp "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}" "${tmp_dir}/to_shuffle"
-    shuf "${tmp_dir}/to_shuffle" > "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}"
+    ShuffleFile "${tmp_dir}/split.ONLY.${label}"
 done
 
 #
@@ -72,7 +91,7 @@ done
 
 for label in ${label_list}
 do
-    split --suffix-length=1 --numeric-suffixes=1 --number=l/${nb_splits} "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}" "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}."
+    split --suffix-length=3 --numeric-suffixes=1 --number=l/${nb_splits} "${tmp_dir}/split.ONLY.${label}" "${tmp_dir}/split.ONLY.${label}."
 done
 
 #
@@ -83,14 +102,16 @@ done
 
 for i in `seq 1 $nb_splits`
 do
+
+    split_suffix=`zeroPadIntValue $i`
     (
 	echo "${fullKhiopsSrcFileHead}"
 
 	for label in ${label_list}
 	do
-	    cat "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}.$i"
+	    cat "${tmp_dir}/split.ONLY.${label}.$split_suffix"
 	done
-    ) > "${sample_output_file_prefix}$i"
+    ) > "${sample_output_file_prefix}$split_suffix"
 done
 
 
