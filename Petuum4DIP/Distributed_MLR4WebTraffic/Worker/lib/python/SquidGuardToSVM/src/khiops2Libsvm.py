@@ -101,15 +101,17 @@ def label_instance_to_index (label_class_name, label_instance_string_value):
     
     
    
-def add_khiops_data_line_to_libsvm_representation (khiops_data_line):
+def add_khiops_data_line_to_libsvm_representation (khiops_data_line, label_index):
     
     global _input_data_libsvm_representation
     global _feature_names_list 
     global _label_names_list   
     
     khiops_data_line_as_list = khiops_data_line.split()
-    label_instance_value = khiops_data_line_as_list[0]
-    feature_string_value_list = khiops_data_line_as_list[1:]
+    label_instance_value = khiops_data_line_as_list[label_index]
+    
+    # feature list is the concatenation of all elements other than khiops_data_line_as_list[label_index]
+    feature_string_value_list = khiops_data_line_as_list[:label_index] + khiops_data_line_as_list[label_index + 1:]   
     
     features_values_table = {}
     for (feature_name, feature_string_value) in zip(_feature_names_list, feature_string_value_list):
@@ -121,9 +123,19 @@ def add_khiops_data_line_to_libsvm_representation (khiops_data_line):
     line_representation = (label_index, features_values_table)
         
     _input_data_libsvm_representation['vectors'].append(line_representation)
+    
+def map_last_feature_to_all_ones ():
+    
+    global _input_data_libsvm_representation
+    
+    # TODO: not yet implemented
+    
+    pass
+      
+           
         
 
-def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
+def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix, label_index):
     
     global _input_data_libsvm_representation
     global _feature_names_list
@@ -148,8 +160,8 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
         header_line = khiops_file.readline()
         headers_as_list = header_line.split()
         
-        _label_names_list = headers_as_list[:1]
-        _feature_names_list = headers_as_list[1:]
+        _label_names_list = [ headers_as_list[label_index] ] # TODO: singleton. May be a list of columns 
+        _feature_names_list = headers_as_list[:label_index] + headers_as_list[label_index + 1:]
         
         while True:
             
@@ -157,7 +169,7 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix):
             if not line:
                 break
             
-            add_khiops_data_line_to_libsvm_representation (line)
+            add_khiops_data_line_to_libsvm_representation (line, label_index)
             nb_samples += 1
             
     # TODO: save resulting representation
@@ -268,7 +280,7 @@ def main():
         logging.getLogger().setLevel (logging.DEBUG)
     
 
-    khiopsFile2LibSvmFile (args.khiopsInputFile, args.libSVMFile)
+    khiopsFile2LibSvmFile (args.khiopsInputFile, args.libSVMFile, label_index = 0)
     
     if (args.dumpLabelMapping):
         dumpLabelMappingToFile (args.dumpLabelMapping)
