@@ -5,10 +5,13 @@ HERE=`dirname "$0"`
 fullKhiopsSrcFile="$1"
 nb_splits="$2"
 
+sample_output_file_prefix="$3"
+
 if [ -z "${nb_splits}" ]
 then
     nb_splits=1
 fi
+
 
 : ${label_list="EDIBLE POISONOUS"}
 : ${tmp_dir:="/tmp/ZZ"}
@@ -17,6 +20,11 @@ if [ ! -r "${fullKhiopsSrcFile}" ]
 then
     echo "I need a Khiops formated input file" 1>&2
     exit 1
+fi
+
+if [ -z "${sample_output_file_prefix}" ]
+then
+    sample_output_file_prefix="${fullKhiopsSrcFile}.SAMPLE.}"
 fi
 
 mkdir -m 777 -p "${tmp_dir}"
@@ -76,11 +84,13 @@ done
 for i in `seq 1 $nb_splits`
 do
     (
+	echo "${fullKhiopsSrcFileHead}"
+
 	for label in ${label_list}
 	do
 	    cat "${tmp_dir}/${fullKhiopsSrcFileBasename}.ONLY.${label}.$i"
 	done
-    ) > "${tmp_dir}/${fullKhiopsSrcFileBasename}.SAMPLE.$i"
+    ) > "${sample_output_file_prefix}$i"
 done
 
 
