@@ -16,11 +16,6 @@ sample_output_file_prefix="$2"
 
 : ${splitter:="${HERE}/splitKhiopsSampleFile.sh"}
 
-if [ -z "${nb_splits}" ]
-then
-    nb_splits=1
-fi
-
 : ${tmp_dir:="/tmp/ZZ"}
 
 if [ ! -r "${khiopsSrcFile}" ]
@@ -33,6 +28,17 @@ if [ -z "${sample_output_file_prefix}" ]
 then
     sample_output_file_prefix="${khiopsSrcFile}.LEARN_AND_TEST.}"
 fi
+
+function zeroPadIntValue ()
+{
+    string_to_pad_with_zero="$1"
+
+    tmp="00000${string_to_pad_with_zero}"
+    padded_string="${tmp: -3}"
+
+    echo "${padded_string}"
+}
+
 
 mkdir -m 777 -p "${tmp_dir}"
 
@@ -52,7 +58,7 @@ nb_quantums=$(( ${proportion_for_learning} + ${proportion_for_test_during_learni
 # split into quantums
 #
 
-"${splitter}" "${khiopsSrcFile}" $nb_splits "${tmp_dir}/quantums."
+"${splitter}" "${khiopsSrcFile}" $nb_quantums "${tmp_dir}/quantums."
 
 #
 # assemble the needed amount of quantums to get the correct proportion
@@ -61,38 +67,34 @@ nb_quantums=$(( ${proportion_for_learning} + ${proportion_for_test_during_learni
 function getTheNthQuantumsContent ()
 {
     first_quantum_index=$1
-    last_quantun_index$2
-
-    shift 2
-
-    file_name_list="$@"
+    last_quantum_index$2
+    split_filename_prefix="$3"
 
     echo "${khiopsSrcFileHead}"
-    for quantum_index in `seq ${first_quantum_index} ${last_quantun_index}`
+    for quantum_index in `seq ${first_quantum_index} ${last_quantum_index}`
     do
 	# get content of that quantum
+	split_suffix=`zeroPadIntValue $quantum_index`
 	sed -e \
 	    '1d' \
-	    "${file_name_list[$quantum_index]}"
+	    "${split_filename_prefix}${split_suffix}"
     done
 }
 
-quantum_file_list=$( ls -1 ${tmp_dir}/quantums.* )
-
 first_quantum_index=1
-last_quantun_index=$(( ${first_quantum_index} + ${proportion_for_learning} ))
+last_quantum_index=$(( ${first_quantum_index} + ${proportion_for_learning} - 1 ))
 
-getTheNthQuantumsContent ${first_quantum_index} ${last_quantun_index} ${quantum_file_list} \
+getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
    >  "${sample_output_file_prefix}.PART_FOR_LEARNING"
 
-first_quantum_index=${last_quantun_index}
-last_quantun_index=$(( ${first_quantum_index} + ${proportion_for_test_during_learning} ))
+first_quantum_index=$(( ${last_quantum_index} + 1 ))
+last_quantum_index=$(( ${first_quantum_index} + ${proportion_for_test_during_learning} - 1 ))
 
-getTheNthQuantumsContent ${first_quantum_index} ${last_quantun_index} ${quantum_file_list} \
+getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
    >  "${sample_output_file_prefix}.PART_FOR_TEST_DURING_LEARNING"
 
-first_quantum_index=${last_quantun_index}
-last_quantun_index=$(( ${first_quantum_index} + ${proportion_to_predict_on} ))
+first_quantum_index=$(( ${last_quantum_index} + 1 ))
+last_quantum_index=$(( ${first_quantum_index} + ${proportion_to_predict_on} - 1 ))
 
-getTheNthQuantumsContent ${first_quantum_index} ${last_quantun_index} ${quantum_file_list} \
+getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
    >  "${sample_output_file_prefix}.PART_TO_PREDICT_ON"
