@@ -120,7 +120,7 @@ void Softmax(std::vector<float>* vec) {
 
 def Sigmoid (x):
     
-    sigmoid_val = 1 / (1 + math.exp(-x))
+    sigmoid_val = 1.0 / (1.0 + math.exp(-x))
     
     return sigmoid_val
 
