@@ -195,11 +195,13 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix, column_tit
         while True:
             
             line = khiops_file.readline()
-            if not line:
+            if not line or (line.strip() == ''):
                 break
             
             add_khiops_data_line_to_libsvm_representation (line, label_index)
             nb_samples += 1
+            
+            logging.debug('Handled line# %d' % nb_samples)
             
     # TODO: save resulting representation
     nb_labels = _label_index_table.getNbLabels()
