@@ -10,7 +10,7 @@ shift 2
 slices_size_list="$@"
 
 
-: ${splitter:="${HERE}/splitKhiopsSampleFile.sh"}
+: ${splitter:="${HERE}/splitEqualyKhiopsSampleFile.sh"}
 
 : ${tmp_dir:="/tmp/ZZ"}
 
