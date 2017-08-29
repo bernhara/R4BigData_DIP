@@ -66,13 +66,26 @@ class LabelToIndexConverter:
         nbLabels = self._last_allocated_label_index
         return nbLabels
     
-    def dump(self, separator = os.linesep):
+    def dump(self, line_separator = os.linesep, value_separator = '/', perform_ordering = False):
+        
+        #
+        # build a reverse dict of the form D[index]=label_class_value
+        #
+        
+        _dict_of_all_indexes={}
+        
+        for label_class, label_names in self._label_classes.items():
+            for label_name, label_index in label_names.items():
+                _dict_of_all_indexes[label_index] = (label_class, label_name)
+        
+        if perform_ordering:
+            sorted (_dict_of_all_indexes, key=_dict_of_all_indexes.get)
         
         dump_string = ''
-        for label_class, label_names in self._label_classes.items():
+        for label_name_index, label_names in _dict_of_all_indexes.items():
             
-            for label_name, label_index in label_names.items():
-                dump_string = dump_string + '%d: %s_%s%s' % (label_index, label_class, label_name, separator)
+            label_class_name, label_value_name = label_names
+            dump_string = dump_string + '%d: %s%s%s%s' % (label_name_index, label_class_name, value_separator, label_value_name, line_separator)
                 
         return dump_string
                 
@@ -119,8 +132,8 @@ def add_khiops_data_line_to_libsvm_representation (khiops_data_line, label_index
         features_values_table[feature_value_index] = 1
         
     label_class_name = _label_names_list[0]
-    label_index = label_instance_to_index(label_class_name, label_instance_value)
-    line_representation = (label_index, features_values_table)
+    label_value_index = label_instance_to_index(label_class_name, label_instance_value)
+    line_representation = (label_value_index, features_values_table)
         
     _input_data_libsvm_representation['vectors'].append(line_representation)
     
@@ -135,7 +148,7 @@ def map_last_feature_to_all_ones ():
            
         
 
-def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix, label_index):
+def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix, column_title_for_label):
     
     global _input_data_libsvm_representation
     global _feature_names_list
@@ -159,6 +172,22 @@ def khiopsFile2LibSvmFile (khiops_file_name, libsvm_file_name_prefix, label_inde
         
         header_line = khiops_file.readline()
         headers_as_list = header_line.split()
+        
+        #
+        # search for the index of the label column
+        #
+        if not column_title_for_label:
+            # without any preference, we use the first column as labels
+            label_index = 0
+        else:
+            # we search for the given column name
+            if column_title_for_label in headers_as_list:
+                label_index = headers_as_list.index(column_title_for_label)
+            else:
+                logging.critical('Requested label "%s" not found in headers' % column_title_for_label)
+                logging.critical('Aborting.')
+                return
+                
         
         _label_names_list = [ headers_as_list[label_index] ] # TODO: singleton. May be a list of columns 
         _feature_names_list = headers_as_list[:label_index] + headers_as_list[label_index + 1:]
@@ -193,13 +222,13 @@ def dumpLabelMappingToFile (dumpFileName):
     with open (dumpFileName, 'w') as dumpFile:
         
         # Dump classes (labels)
-        label_dump = _label_index_table.dump()
+        label_dump = _label_index_table.dump(perform_ordering=True)
         
         print('Labels (ie. Classes):', file=dumpFile)
         print (label_dump, file=dumpFile)
         
         # Dump feature
-        feature_dump = _feature_index_table.dump()
+        feature_dump = _feature_index_table.dump(perform_ordering=True)
         
         print('Features:', file=dumpFile)
         print (feature_dump, file=dumpFile)        
@@ -260,7 +289,10 @@ def main():
     An additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's algorithms.
     For example, these 2 files can be used as input to Petuum's MRL''')
     parser.add_argument("-m", "--dumpLabelMapping", metavar='<name of file to generate>', type=str, dest="dumpLabelMapping", required=False,
-                        help='''Contains a mapping between the literal names found in the input file and the values corresponding integers matching the LibSVM format.''')    
+                        help='''Contains a mapping between the literal names found in the input file and the values corresponding integers matching the LibSVM format.''')
+    
+    parser.add_argument("-l", "--labelName", metavar='<column title>', type=str, dest="labelName", required=False,
+                        help='''Column title designing the column to use as a label and not as a feature.''')        
 
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
@@ -280,7 +312,7 @@ def main():
         logging.getLogger().setLevel (logging.DEBUG)
     
 
-    khiopsFile2LibSvmFile (args.khiopsInputFile, args.libSVMFile, label_index = 0)
+    khiopsFile2LibSvmFile (args.khiopsInputFile, args.libSVMFile, column_title_for_label = args.labelName)
     
     if (args.dumpLabelMapping):
         dumpLabelMappingToFile (args.dumpLabelMapping)
