@@ -5,14 +5,10 @@ HERE=`dirname "$0"`
 khiopsSrcFile="$1"
 sample_output_file_prefix="$2"
 
+shift 2
 
-#
-# declare amount of data
-#
+slices_size_list="$@"
 
-: ${proportion_for_learning=5} # 1 tenth
-: ${proportion_for_test_during_learning=3} # 7 tenth
-: ${proportion_to_predict_on=2} # 2 tenth
 
 : ${splitter:="${HERE}/splitKhiopsSampleFile.sh"}
 
@@ -28,6 +24,28 @@ if [ -z "${sample_output_file_prefix}" ]
 then
     sample_output_file_prefix="${khiopsSrcFile}.LEARN_AND_TEST.}"
 fi
+
+if [ -z "${slices_size_list}" ]
+then
+    echo "I need a slice size specification" 1>&2
+    exit 1
+fi
+
+for slice_size in ${slices_size_list}
+do
+    if [ -z "${varname##+([0-9])}" ]
+    then
+	if [ ${slice_size} -le 0 -o ${slice_size} -gt 20 ]
+	then
+	    echo "Slice specification out of range" 1>&2
+	    exit 1
+	fi
+    else
+	echo "Slice specification must be an integer" 1>&2
+	exit 1
+    fi
+done
+    
 
 function zeroPadIntValue ()
 {
@@ -52,7 +70,11 @@ khiopsSrcFileHead=`head -1 "${khiopsSrcFile}"`
 # compute the amount of splits we have to generate
 #
 
-nb_quantums=$(( ${proportion_for_learning} + ${proportion_for_test_during_learning} + ${proportion_to_predict_on} ))
+nb_quantums=0
+for slice_size in ${slices_size_list}
+do
+    nb_quantums=$(( ${nb_quantums} + ${slice_size} ))
+done
 
 #
 # split into quantums
@@ -67,7 +89,7 @@ nb_quantums=$(( ${proportion_for_learning} + ${proportion_for_test_during_learni
 function getTheNthQuantumsContent ()
 {
     first_quantum_index=$1
-    last_quantum_index$2
+    last_quantum_index=$2
     split_filename_prefix="$3"
 
     echo "${khiopsSrcFileHead}"
@@ -81,20 +103,13 @@ function getTheNthQuantumsContent ()
     done
 }
 
-first_quantum_index=1
-last_quantum_index=$(( ${first_quantum_index} + ${proportion_for_learning} - 1 ))
+last_quantum_index=0
 
-getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
-   >  "${sample_output_file_prefix}.PART_FOR_LEARNING"
+for slice_size in ${slices_size_list}
+do
+    first_quantum_index=$(( ${last_quantum_index} + 1 ))
+    last_quantum_index=$(( ${first_quantum_index} + ${slice_size} - 1 ))
 
-first_quantum_index=$(( ${last_quantum_index} + 1 ))
-last_quantum_index=$(( ${first_quantum_index} + ${proportion_for_test_during_learning} - 1 ))
-
-getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
-   >  "${sample_output_file_prefix}.PART_FOR_TEST_DURING_LEARNING"
-
-first_quantum_index=$(( ${last_quantum_index} + 1 ))
-last_quantum_index=$(( ${first_quantum_index} + ${proportion_to_predict_on} - 1 ))
-
-getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
-   >  "${sample_output_file_prefix}.PART_TO_PREDICT_ON"
+    getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
+			     >  "${sample_output_file_prefix}.slice.${slice_size}"
+done
