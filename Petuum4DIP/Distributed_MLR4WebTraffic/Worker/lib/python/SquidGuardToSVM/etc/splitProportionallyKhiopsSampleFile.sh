@@ -33,7 +33,7 @@ fi
 
 for slice_size in ${slices_size_list}
 do
-    if [ -z "${varname##+([0-9])}" ]
+    if [ -z "${slice_size##+([0-9])}" ]
     then
 	if [ ${slice_size} -le 0 -o ${slice_size} -gt 20 ]
 	then
