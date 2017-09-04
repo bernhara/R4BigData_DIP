@@ -14,35 +14,37 @@ slices_size_list="$@"
 
 : ${tmp_dir:="/tmp/ZZ"}
 
+Usage ()
+{
+    msg="$1"
+
+    echo "${msg}" 1>&2
+    echo "Usage: <cmd> <Khiops input format compliant file (csv)> <generated samples output prefix path> <slice size> [<slice size>...] " 1>&2
+    echo "	A slice sice is an integer. Ex: 3 5 2 will generate 3 files containing respectively 30%, 50% and 20% of the input file" 1>&2
+    echo "	The content of the file is randomly shuffled before being split" 1>&2
+    exit 1
+}
+
 if [ ! -r "${khiopsSrcFile}" ]
 then
-    echo "I need a Khiops formated input file" 1>&2
-    exit 1
-fi
-
-if [ -z "${sample_output_file_prefix}" ]
-then
-    sample_output_file_prefix="${khiopsSrcFile}.LEARN_AND_TEST.}"
+    Usage "I need a Khiops formated input file"
 fi
 
 if [ -z "${slices_size_list}" ]
 then
-    echo "I need a slice size specification" 1>&2
-    exit 1
+    Usage "I need a slice size specification"
 fi
 
 for slice_size in ${slices_size_list}
 do
-    if [ -z "${slice_size##+([0-9])}" ]
+    if [ -n "${slice_size}" -a -z "${slice_size##[0-9]*}" ]
     then
 	if [ ${slice_size} -le 0 -o ${slice_size} -gt 20 ]
 	then
-	    echo "Slice specification out of range" 1>&2
-	    exit 1
+	    Usage "Slice specification out of range"
 	fi
     else
-	echo "Slice specification must be an integer" 1>&2
-	exit 1
+	Usage "Slice specification must be an integer"
     fi
 done
     
