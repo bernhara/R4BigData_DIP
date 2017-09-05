@@ -60,10 +60,16 @@ mkdir -m 777 -p "${tmp_dir}"
 fullKhiopsSrcFileBasename=`basename "${fullKhiopsSrcFile}"`
 
 #
+# Remove blank lines
+#
+grep -v '^[[:space:]]*$' "${fullKhiopsSrcFile}" > "${tmp_dir}/input_file_without_blank_lines"
+
+
+#
 # Get header
 #
 
-fullKhiopsSrcFileHead=`head -1 "${fullKhiopsSrcFile}"`
+fullKhiopsSrcFileHead=`head -1 "${tmp_dir}/input_file_without_blank_lines"`
 
 #
 # Generate file containing the body only
@@ -73,7 +79,7 @@ bodyFile="${tmp_dir}/body"
 
 sed -e \
     '1d' \
-    "${fullKhiopsSrcFile}" > "${bodyFile}"
+    "${tmp_dir}/input_file_without_blank_lines" > "${bodyFile}"
 
 #
 # Seperate classes
@@ -101,6 +107,8 @@ label_list=$(
     cut -f${column_index_to_balance} "${bodyFile}" | \
 	sort -u
 )
+
+# ... generate a separate file for each label
 
 for label in ${label_list}
 do
@@ -144,5 +152,3 @@ do
 	done
     ) > "${sample_output_file_prefix}$split_suffix"
 done
-
-
