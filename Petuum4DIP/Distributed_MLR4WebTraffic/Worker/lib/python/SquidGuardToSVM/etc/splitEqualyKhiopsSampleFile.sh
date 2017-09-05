@@ -3,23 +3,33 @@
 HERE=`dirname "$0"`
 
 fullKhiopsSrcFile="$1"
-nb_splits="$2"
+column_title_to_balance="$2"
+nb_splits="$3"
 
-sample_output_file_prefix="$3"
+sample_output_file_prefix="$4"
 
-if [ -z "${nb_splits}" ]
-then
-    nb_splits=1
-fi
-
-
-: ${label_list="EDIBLE POISONOUS"}
 : ${tmp_dir:="/tmp/ZZ"}
+
+Usage ()
+{
+    msg="$1"
+
+    echo "${msg}" 1>&2
+    echo "Usage: <cmd> <Khiops input format compliant file (csv)> <column title to balance to splitted files> <number of equal sized splits of input file> [<output file path prefix>]" 1>&2
+    echo "	<output file path prefix> is not defaults to \"<Khiops input file name>.SAMPLE.\"" 1>&2
+    exit 1
+}
 
 if [ ! -r "${fullKhiopsSrcFile}" ]
 then
-    echo "I need a Khiops formated input file" 1>&2
-    exit 1
+    Usage "I need a Khiops formated input file"
+fi
+
+if [ -n "${nb_splits}" -a -z "${nb_splits##[0-9]*}" ]
+then
+    :
+else
+    Usage "${nb_splits}: wrong numbre for Slice specification out of range"
 fi
 
 if [ -z "${sample_output_file_prefix}" ]
@@ -45,8 +55,6 @@ function zeroPadIntValue ()
     echo "${padded_string}"
 }
 
-
-
 mkdir -m 777 -p "${tmp_dir}"
 
 fullKhiopsSrcFileBasename=`basename "${fullKhiopsSrcFile}"`
@@ -70,6 +78,29 @@ sed -e \
 #
 # Seperate classes
 #
+
+# ... compute the label list of the column to distribube equaliy
+
+column_index_to_balance=1
+
+for column_title in ${fullKhiopsSrcFileHead} "_COLUMN_TITLE_NOT_FOUND_"
+do
+    if [ "${column_title}" = "${column_title_to_balance}" ]
+    then
+	break
+    fi
+    (( column_index_to_balance++ ))
+done
+
+if [ "${column_title}" = "_COLUMN_TITLE_NOT_FOUND_" ]
+then
+    Usage "${column_title_to_balance} not found in the list of column titles"
+fi
+
+label_list=$(
+    cut -f${column_index_to_balance} "${bodyFile}" | \
+	sort -u
+)
 
 for label in ${label_list}
 do
