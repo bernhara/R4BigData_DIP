@@ -23,7 +23,7 @@ Usage ()
 
 if [ ! -r "${libSvmLearningFile}" ]
 then
-    Usage "Missing LIBSvm source file"
+    Usage "Cannot read LIBSvm file: \"${libSvmLearningFile}\""
 fi
 
 if [ ! -r "${libsvm_meta_source_file}" ]
@@ -50,7 +50,7 @@ fi
 
 if [ -z "${worker_libSvmLearningFile_prefix}" ]
 then
-    sample_output_file_prefix="${libSvmLearningFile}.partial_data."
+    worker_libSvmLearningFile_prefix="${libSvmLearningFile}.partition"
 fi
 
 
@@ -73,27 +73,28 @@ ShuffleFile "${tmp_dir}/src.libsvm"
 
 split --suffix-length=1 --numeric-suffixes=1 --number=l/${nb_workers} "${tmp_dir}/src.libsvm" "${tmp_dir}/src.libsvm.part."
 
-for worker_index in `seq 1 ${nb_workers}`
+for part_number in `seq 1 ${nb_workers}`
 do
     # generated "meta" files for each part
 
     # recompute "num_train_this_partition"
-    nb_samples=`wc -l < "${tmp_dir}/src.libsvm.part.${worker_index}"`
+    nb_samples=`wc -l < "${tmp_dir}/src.libsvm.part.${part_number}"`
 
     (
 	# remove "num_train_this_partition" if present
 	grep -v 'num_train_this_partition:' "${tmp_dir}/src.libsvm.meta"
 
 	echo "num_train_this_partition: ${nb_samples}"
-    ) > "${tmp_dir}/src.libsvm.part.${worker_index}.meta"
+    ) > "${tmp_dir}/src.libsvm.part.${part_number}.meta"
 done
 
 #
 # produce target files
 #
 
-for worker_index in `seq 1 ${nb_workers}`
+for part_number in `seq 1 ${nb_workers}`
 do
-    cp "${tmp_dir}/src.libsvm.part.${worker_index}" "${worker_libSvmLearningFile_prefix}.${worker_index}"
-    cp "${tmp_dir}/src.libsvm.part.${worker_index}.meta" "${worker_libSvmLearningFile_prefix}.${worker_index}.meta"
+    petuum_worker_id=$(( part_number - 1 ))
+    cp "${tmp_dir}/src.libsvm.part.${part_number}" "${worker_libSvmLearningFile_prefix}${petuum_worker_id}"
+    cp "${tmp_dir}/src.libsvm.part.${part_number}.meta" "${worker_libSvmLearningFile_prefix}${petuum_worker_id}.meta"
 done
