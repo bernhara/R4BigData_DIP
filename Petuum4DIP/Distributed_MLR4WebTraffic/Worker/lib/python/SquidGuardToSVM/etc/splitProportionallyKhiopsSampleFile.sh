@@ -3,12 +3,12 @@
 HERE=`dirname "$0"`
 
 khiopsSrcFile="$1"
-sample_output_file_prefix="$2"
+column_title_to_balance="$2"
+sample_output_file_prefix="$3"
 
-shift 2
+shift 3
 
 slices_size_list="$@"
-
 
 : ${splitter:="${HERE}/splitEqualyKhiopsSampleFile.sh"}
 
@@ -19,7 +19,7 @@ Usage ()
     msg="$1"
 
     echo "${msg}" 1>&2
-    echo "Usage: <cmd> <Khiops input format compliant file (csv)> <generated samples output prefix path> <slice size> [<slice size>...] " 1>&2
+    echo "Usage: <cmd> <Khiops input format compliant file (csv)> <column title to balance to splitted files> <generated samples output prefix path> <slice size> [<slice size>...] " 1>&2
     echo "	A slice sice is an integer. Ex: 3 5 2 will generate 3 files containing respectively 30%, 50% and 20% of the input file" 1>&2
     echo "	The content of the file is randomly shuffled before being split" 1>&2
     exit 1
@@ -82,7 +82,7 @@ done
 # split into quantums
 #
 
-"${splitter}" "${khiopsSrcFile}" $nb_quantums "${tmp_dir}/quantums."
+"${splitter}" "${khiopsSrcFile}" "${column_title_to_balance}" $nb_quantums "${tmp_dir}/quantums."
 
 #
 # assemble the needed amount of quantums to get the correct proportion
