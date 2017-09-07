@@ -302,11 +302,15 @@ def main():
     
     if args.featureOneBased:
         _feature_one_based = True
+        logging.critical("One based features not yet implemented")
+        sys.exit(1)        
     else:
         _feature_one_based = False
         
     if args.labelOneBased:
         _label_one_based = True
+        logging.critical("One based labels not yet implemented")
+        sys.exit(1)
     else:
         _label_one_based = False   
         
