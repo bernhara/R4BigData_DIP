@@ -333,11 +333,12 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
         prediction_for_this_label = predicted_labelization_sparse_vector[label_index]
         _logger.debug ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, prediction_for_this_label))
 
+
       
     # predict label by getting the label index having the greatest factor
     geatest_factor = -sys.float_info.max
     highest_label_index = None
-    prediction_vector=()
+
     for label_index in predicted_labelization_sparse_vector.keys():
         prediction_for_this_label = predicted_labelization_sparse_vector[label_index] 
         if prediction_for_this_label > geatest_factor:
@@ -347,6 +348,8 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
     predicted_label_index = highest_label_index
     _logger.debug ('\t\tPredicted label index {} with score : {}'.format(predicted_label_index, geatest_factor))
     
+
+    
     # The same, sorting prediction result    
     predicted_labelization_vector_elements_list = predicted_labelization_sparse_vector.items()
     sorted_predicted_labelization_vector_elements_list = sorted(predicted_labelization_vector_elements_list,
@@ -354,7 +357,7 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
                                                                 reverse=True)
     _logger.debug ('\t\tPrediction order for each feature: {}'.format(sorted_predicted_labelization_vector_elements_list))
 
-    return (predicted_label_index)
+    return (predicted_label_index, predicted_labelization_sparse_vector)
 
 def main():
     
@@ -408,9 +411,14 @@ def main():
         
         _logger.debug ('Checking test sample line # {} which has label index {}'.format(test_sample_line_number, sample_label_index))
         
-        predicted_label_index = predict_label_index (feature_sparse_vector = sample_feature_sparse_vector,
-                                                     petuum_mlr_computed_weight_representation = rebased_weights_representation,
-                                                     one_based = args.oneBased)
+        predicted_label_index, scores_sparse_vector = predict_label_index (feature_sparse_vector = sample_feature_sparse_vector,
+                                                                           petuum_mlr_computed_weight_representation = rebased_weights_representation,
+                                                                           one_based = args.oneBased)
+        
+        # TODO: generate a formated output
+        _scores_as_csv = ';'.join('{0:d}:{1:+f}'.format(k, scores_sparse_vector[k]) for k in sorted(scores_sparse_vector))
+        _prediction_out = '{0:d};{1:d};'.format(sample_label_index, predicted_label_index) + _scores_as_csv
+        print ('__CSV__OUT__;' + _prediction_out)            
         
         if predicted_label_index == sample_label_index:
             _logger.debug ('\tMATCHED label prediction')
