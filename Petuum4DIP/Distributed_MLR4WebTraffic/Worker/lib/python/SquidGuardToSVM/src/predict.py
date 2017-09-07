@@ -333,12 +333,14 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
     for label_index in predicted_labelization_sparse_vector.keys():
         prediction_for_this_label = predicted_labelization_sparse_vector[label_index]
         _logger.debug ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, prediction_for_this_label))
-        
+
+      
     # predict label by getting the label index having the greatest factor
     geatest_factor = -sys.float_info.max
     highest_label_index = None
+    prediction_vector=()
     for label_index in predicted_labelization_sparse_vector.keys():
-        prediction_for_this_label = predicted_labelization_sparse_vector[label_index]        
+        prediction_for_this_label = predicted_labelization_sparse_vector[label_index] 
         if prediction_for_this_label > geatest_factor:
             geatest_factor = prediction_for_this_label
             highest_label_index = label_index
@@ -375,9 +377,7 @@ def main():
                         help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
                         help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
-    parser.add_argument("--oneBased", action='store_false', dest="oneBased",
-                        help='If true, labels and feature indexing will be one based (initial shifting is performed if necessary -- default is true => first label and feature index is "1"')    
-    parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
+   parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
 
     args = parser.parse_args()
     
@@ -390,15 +390,6 @@ def main():
         _label_one_based = True
     else:
         _label_one_based = False
-        
-    if args.oneBased:
-        _feature_one_based = True        
-        _label_one_based = True
-    else:
-        _logger.critical ('ZERO BASE unsupported')
-        sys.exit(1)
-        _feature_one_based = False        
-        _label_one_based = False      
         
     if args.debug:
         logging.getLogger().setLevel (logging.DEBUG)
