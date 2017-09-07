@@ -16,8 +16,7 @@ import unittest
 
 import petuumEmulationLib
 
-_feature_one_based = False
-_label_one_based = False
+_one_based = False
 
 '''
 The dictionary representing a libsvm_file will have (eventually) the following keys:
@@ -373,23 +372,16 @@ def main():
                         help='''The "LIB SVM" formated file, containing the classified content.
     The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
     These 2 files can be used as input to Petuum's MRL''') 
-    parser.add_argument("--featureOneBased", action='store_true', dest="featureOneBased", 
-                        help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
-    parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
-                        help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
-   parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
+    parser.add_argument("--oneBased", action='store_true', dest="oneBased",
+                        help='If true, labels and feature indexing will be one based (initial shifting is performed if necessary -- default is true => first label and feature index is "1"')    
+    parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
 
     args = parser.parse_args()
     
-    if args.featureOneBased:
-        _feature_one_based = True
+    if args.oneBased:
+        _one_based = True        
     else:
-        _feature_one_based = False
-        
-    if args.labelOneBased:
-        _label_one_based = True
-    else:
-        _label_one_based = False
+        _one_based = False        
         
     if args.debug:
         logging.getLogger().setLevel (logging.DEBUG)
@@ -401,12 +393,12 @@ def main():
     
     petuum_mlr_computed_label_weights_representation = read_peetuum_mlr_weight_matrix_file(args.weitghFile)
     rebased_weights_representation = rebase_libsvm_file_representation (petuum_mlr_computed_label_weights_representation,
-                                                                        target_feature_one_based=_feature_one_based,
-                                                                        target_label_one_based=_label_one_based)
+                                                                        target_feature_one_based=_one_based,
+                                                                        target_label_one_based=_one_based)
     test_sample_representation = read_petuum_libsvm_file(args.libSVMFile)
     rebased_test_sample_representation = rebase_libsvm_file_representation (test_sample_representation,
-                                                                            target_feature_one_based=_feature_one_based,
-                                                                            target_label_one_based=_label_one_based)
+                                                                            target_feature_one_based=_one_based,
+                                                                            target_label_one_based=_one_based)
     
     test_sample_line_number = 1
     matched_predictions = 0
