@@ -416,9 +416,13 @@ def main():
                                                                            one_based = args.oneBased)
         
         # TODO: generate a formated output
-        _scores_as_csv = ';'.join('{0:d}:{1:+f}'.format(k, scores_sparse_vector[k]) for k in sorted(scores_sparse_vector))
+        _index_probability_csv_output_format='{0:d}:{1:+f}'
+        _index_probability_csv_output_format='{1:+f}'
+        #!!!! _scores_as_csv = ';'.join('{0:d}:{1:+f}'.format(k, scores_sparse_vector[k]) for k in sorted(scores_sparse_vector))
+        
+        _scores_as_csv = ';'.join(_index_probability_csv_output_format.format(k, scores_sparse_vector[k]) for k in sorted(scores_sparse_vector))
         _prediction_out = '{0:d};{1:d};'.format(sample_label_index, predicted_label_index) + _scores_as_csv
-        print ('__CSV__OUT__;' + _prediction_out)            
+        print ('__PREDICTION_CSV_OUT__;' + _prediction_out)            
         
         if predicted_label_index == sample_label_index:
             _logger.debug ('\tMATCHED label prediction')
