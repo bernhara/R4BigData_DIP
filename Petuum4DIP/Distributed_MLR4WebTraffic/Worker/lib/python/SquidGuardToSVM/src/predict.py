@@ -403,6 +403,8 @@ def main():
                                                                             target_feature_one_based=_one_based,
                                                                             target_label_one_based=_one_based)
     
+    # TODO: generate a formated output
+    print ('// FORMAT: __PREDICTION_CSV_OUT__;real label;predicted label;label 0 prability;label 1 probability;...')
     test_sample_line_number = 1
     matched_predictions = 0
     unmatched_predictions = 0
@@ -418,7 +420,6 @@ def main():
         # TODO: generate a formated output
         _index_probability_csv_output_format='{0:d}:{1:+f}'
         _index_probability_csv_output_format='{1:+f}'
-        #!!!! _scores_as_csv = ';'.join('{0:d}:{1:+f}'.format(k, scores_sparse_vector[k]) for k in sorted(scores_sparse_vector))
         
         _scores_as_csv = ';'.join(_index_probability_csv_output_format.format(k, scores_sparse_vector[k]) for k in sorted(scores_sparse_vector))
         _prediction_out = '{0:d};{1:d};'.format(sample_label_index, predicted_label_index) + _scores_as_csv
