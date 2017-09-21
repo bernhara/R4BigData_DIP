@@ -77,15 +77,25 @@ class LabelToIndexConverter:
         for label_class, label_names in self._label_classes.items():
             for label_name, label_index in label_names.items():
                 _dict_of_all_indexes[label_index] = (label_class, label_name)
+                
+        dump_string = ''
         
         if perform_ordering:
-            sorted (_dict_of_all_indexes, key=_dict_of_all_indexes.get)
+            _smallest_index=min(_dict_of_all_indexes.keys())
+            _greatest_index=max(_dict_of_all_indexes.keys())   
+                        
+            for label_name_index in range(_smallest_index,_greatest_index+1):
+                
+                label_names = _dict_of_all_indexes.get(label_name_index)
+                if label_names:
+                    label_class_name, label_value_name = label_names
+                    dump_string = dump_string + '%d: %s%s%s%s' % (label_name_index, label_class_name, value_separator, label_value_name, line_separator)                    
         
-        dump_string = ''
-        for label_name_index, label_names in _dict_of_all_indexes.items():
+        else:
+            for label_name_index, label_names in _dict_of_all_indexes.items():
             
-            label_class_name, label_value_name = label_names
-            dump_string = dump_string + '%d: %s%s%s%s' % (label_name_index, label_class_name, value_separator, label_value_name, line_separator)
+                label_class_name, label_value_name = label_names
+                dump_string = dump_string + '%d: %s%s%s%s' % (label_name_index, label_class_name, value_separator, label_value_name, line_separator)
                 
         return dump_string
                 
@@ -283,10 +293,10 @@ def main():
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
                         help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
 
-    parser.add_argument("-k", "--khiopsInputFile", metavar='<what???>', type=str, dest="khiopsInputFile", required=True, 
-                        help='The input file use as Khiops input.')
+    parser.add_argument("-k", "--khiopsInputFile", metavar='<tabulated csv input file>', type=str, dest="khiopsInputFile", required=True, 
+                        help='''The input file use as Khiops input. This file must be in a tabulated format (columns separated by tabs)''')
     
-    parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=str, dest="libSVMFile", required=True,
+    parser.add_argument("-p", "--libSVMFile", metavar='<generated libsvm filename for Petuum MLR>', type=str, dest="libSVMFile", required=True,
                         help='''The resulting "LIB SVM" formated file, containing the translated content.
     An additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's algorithms.
     For example, these 2 files can be used as input to Petuum's MRL''')
@@ -294,7 +304,7 @@ def main():
                         help='''Contains a mapping between the literal names found in the input file and the values corresponding integers matching the LibSVM format.''')
     
     parser.add_argument("-l", "--labelName", metavar='<column title>', type=str, dest="labelName", required=False,
-                        help='''Column title designing the column to use as a label and not as a feature.''')        
+                        help='''Column title identifying the column to use as a label and not as a feature. If not specified, the leftmost column is used.''')        
 
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
