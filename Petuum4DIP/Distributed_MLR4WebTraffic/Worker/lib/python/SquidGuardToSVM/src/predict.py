@@ -16,8 +16,7 @@ import unittest
 
 import petuumEmulationLib
 
-_feature_one_based = False
-_label_one_based = False
+_one_based = False
 
 '''
 The dictionary representing a libsvm_file will have (eventually) the following keys:
@@ -333,18 +332,23 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
     for label_index in predicted_labelization_sparse_vector.keys():
         prediction_for_this_label = predicted_labelization_sparse_vector[label_index]
         _logger.debug ('\t\tChecked weight matrix for label index: {} | Resulting label factor for the checked sample : {}'.format(label_index, prediction_for_this_label))
-        
+
+
+      
     # predict label by getting the label index having the greatest factor
     geatest_factor = -sys.float_info.max
     highest_label_index = None
+
     for label_index in predicted_labelization_sparse_vector.keys():
-        prediction_for_this_label = predicted_labelization_sparse_vector[label_index]        
+        prediction_for_this_label = predicted_labelization_sparse_vector[label_index] 
         if prediction_for_this_label > geatest_factor:
             geatest_factor = prediction_for_this_label
             highest_label_index = label_index
             
     predicted_label_index = highest_label_index
     _logger.debug ('\t\tPredicted label index {} with score : {}'.format(predicted_label_index, geatest_factor))
+    
+
     
     # The same, sorting prediction result    
     predicted_labelization_vector_elements_list = predicted_labelization_sparse_vector.items()
@@ -353,7 +357,7 @@ def predict_label_index (feature_sparse_vector, petuum_mlr_computed_weight_repre
                                                                 reverse=True)
     _logger.debug ('\t\tPrediction order for each feature: {}'.format(sorted_predicted_labelization_vector_elements_list))
 
-    return (predicted_label_index)
+    return (predicted_label_index, predicted_labelization_sparse_vector)
 
 def main():
     
@@ -371,34 +375,16 @@ def main():
                         help='''The "LIB SVM" formated file, containing the classified content.
     The additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's MLR algorithm.
     These 2 files can be used as input to Petuum's MRL''') 
-    parser.add_argument("--featureOneBased", action='store_true', dest="featureOneBased", 
-                        help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
-    parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
-                        help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
-    parser.add_argument("--oneBased", action='store_false', dest="oneBased",
+    parser.add_argument("--oneBased", action='store_true', dest="oneBased",
                         help='If true, labels and feature indexing will be one based (initial shifting is performed if necessary -- default is true => first label and feature index is "1"')    
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
 
     args = parser.parse_args()
     
-    if args.featureOneBased:
-        _feature_one_based = True
-    else:
-        _feature_one_based = False
-        
-    if args.labelOneBased:
-        _label_one_based = True
-    else:
-        _label_one_based = False
-        
     if args.oneBased:
-        _feature_one_based = True        
-        _label_one_based = True
+        _one_based = True        
     else:
-        _logger.critical ('ZERO BASE unsupported')
-        sys.exit(1)
-        _feature_one_based = False        
-        _label_one_based = False      
+        _one_based = False        
         
     if args.debug:
         logging.getLogger().setLevel (logging.DEBUG)
@@ -410,13 +396,15 @@ def main():
     
     petuum_mlr_computed_label_weights_representation = read_peetuum_mlr_weight_matrix_file(args.weitghFile)
     rebased_weights_representation = rebase_libsvm_file_representation (petuum_mlr_computed_label_weights_representation,
-                                                                        target_feature_one_based=_feature_one_based,
-                                                                        target_label_one_based=_label_one_based)
+                                                                        target_feature_one_based=_one_based,
+                                                                        target_label_one_based=_one_based)
     test_sample_representation = read_petuum_libsvm_file(args.libSVMFile)
     rebased_test_sample_representation = rebase_libsvm_file_representation (test_sample_representation,
-                                                                            target_feature_one_based=_feature_one_based,
-                                                                            target_label_one_based=_label_one_based)
+                                                                            target_feature_one_based=_one_based,
+                                                                            target_label_one_based=_one_based)
     
+    # TODO: generate a formated output
+    print ('// FORMAT: __PREDICTION_CSV_OUT__;real label;predicted label;label 0 prability;label 1 probability;...')
     test_sample_line_number = 1
     matched_predictions = 0
     unmatched_predictions = 0
@@ -425,9 +413,17 @@ def main():
         
         _logger.debug ('Checking test sample line # {} which has label index {}'.format(test_sample_line_number, sample_label_index))
         
-        predicted_label_index = predict_label_index (feature_sparse_vector = sample_feature_sparse_vector,
-                                                     petuum_mlr_computed_weight_representation = rebased_weights_representation,
-                                                     one_based = args.oneBased)
+        predicted_label_index, scores_sparse_vector = predict_label_index (feature_sparse_vector = sample_feature_sparse_vector,
+                                                                           petuum_mlr_computed_weight_representation = rebased_weights_representation,
+                                                                           one_based = args.oneBased)
+        
+        # TODO: generate a formated output
+        _index_probability_csv_output_format='{0:d}:{1:+f}'
+        _index_probability_csv_output_format='{1:+f}'
+        
+        _scores_as_csv = ';'.join(_index_probability_csv_output_format.format(k, scores_sparse_vector[k]) for k in sorted(scores_sparse_vector))
+        _prediction_out = '{0:d};{1:d};'.format(sample_label_index, predicted_label_index) + _scores_as_csv
+        print ('__PREDICTION_CSV_OUT__;' + _prediction_out)            
         
         if predicted_label_index == sample_label_index:
             _logger.debug ('\tMATCHED label prediction')
