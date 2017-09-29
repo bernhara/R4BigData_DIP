@@ -105,6 +105,8 @@ function getTheNthQuantumsContent ()
     done
 }
 
+outfile_index=1
+
 last_quantum_index=0
 
 for slice_size in ${slices_size_list}
@@ -113,5 +115,7 @@ do
     last_quantum_index=$(( ${first_quantum_index} + ${slice_size} - 1 ))
 
     getTheNthQuantumsContent ${first_quantum_index} ${last_quantum_index} "${tmp_dir}/quantums." \
-			     >  "${sample_output_file_prefix}.slice.${slice_size}"
+			     >  "${sample_output_file_prefix}.slice.${outfile_index}.${slice_size}_of_${nb_quantums}"
+
+    (( outfile_index++ ))
 done
