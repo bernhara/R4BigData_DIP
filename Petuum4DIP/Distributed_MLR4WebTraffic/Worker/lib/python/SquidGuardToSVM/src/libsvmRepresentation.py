@@ -602,11 +602,3 @@ feature_dim: 54
         predicted_label_index, predicted_labelization_sparse_vector = predict_label_index (v, one_based_petuum_mlr_computed_weight_representation, one_based=True)                
         self.assertEqual(1, predicted_label_index)
         
-        
-        
-       
-
-if __name__ == '__main__':
-    
-    
-    main()
