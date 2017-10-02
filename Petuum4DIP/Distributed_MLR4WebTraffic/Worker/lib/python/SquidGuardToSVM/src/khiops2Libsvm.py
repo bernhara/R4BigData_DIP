@@ -10,7 +10,9 @@ import unittest
 import logging
 logging.basicConfig (level=logging.WARNING)
 
-from predict import save_libsvm_representation_to_petuum_file
+from libsvmRepresentation import save_libsvm_representation_to_petuum_file
+
+import pickle
 
 '''
 The dictionary representing a libsvm_file will have (eventually) the following keys:
@@ -285,6 +287,8 @@ def main():
     
     global _feature_one_based
     global _label_one_based
+    global _feature_index_table
+    global _label_index_table
     
     # TODO: rewrite the comment
     parser = argparse.ArgumentParser(description='Generates a LIB SVM formated file for Squid Access Logs which have been labeled by squidGuard.')
@@ -300,11 +304,21 @@ def main():
                         help='''The resulting "LIB SVM" formated file, containing the translated content.
     An additional file with "<libSVMFile>.meta" suffix is generated, which contains the information required by Petuum's algorithms.
     For example, these 2 files can be used as input to Petuum's MRL''')
-    parser.add_argument("-m", "--dumpLabelMapping", metavar='<name of file to generate>', type=str, dest="dumpLabelMapping", required=False,
-                        help='''Contains a mapping between the literal names found in the input file and the values corresponding integers matching the LibSVM format.''')
+    parser.add_argument("--ppLabelMapping", metavar='<name of file to generate>', type=str, dest="ppLabelMapping", required=False,
+                        help='''Contains a pretty printed mapping between the literal names found in the input file and the values corresponding integers matching the LibSVM format.''')
     
     parser.add_argument("-l", "--labelName", metavar='<column title>', type=str, dest="labelName", required=False,
-                        help='''Column title identifying the column to use as a label and not as a feature. If not specified, the leftmost column is used.''')        
+                        help='''Column title identifying the column to use as a label and not as a feature. If not specified, the leftmost column is used.''')
+    
+    parser.add_argument("--labelMappingDumpFile", metavar='<file name>', type=str, dest="labelMappingDumpFile", required=False,
+                        help='''Give a file name containing a "label names" <-> "label id" to a file.''')
+    
+    parser.add_argument("--dumpLabelMapping", action='store_true', dest="dumpLabelMapping", required=False,
+                        help='''Tells to dump the built "label names" <-> " to the file provided by --labelMappingDumpFile arg.''')
+    
+    parser.add_argument("--restoreLabelMapping", action='store_true', dest="restoreLabelMapping", required=False,
+                        help='''Tells to restore the "label names" <-> " from file by --labelMappingDumpFile arg.''')        
+    
 
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
@@ -322,7 +336,22 @@ def main():
         logging.critical("One based labels not yet implemented")
         sys.exit(1)
     else:
-        _label_one_based = False   
+        _label_one_based = False
+        
+
+    if args.restoreLabelMapping and args.dumpLabelMapping:
+        logging.critical("--dumplabelMapping and --restorelabelMapping are mutual exclusive.")
+        sys.exit(1)
+        
+    if args.restoreLabelMapping or args.dumpLabelMapping:
+        if not args.labelMappingDumpFile:
+            logging.critical("--dumplabelMapping and --restorelabelMapping implies --labelMappingDumpFile.")
+            sys.exit(1)            
+            
+        
+    if args.restoreLabelMapping:
+        with open (args.labelMappingDumpFile, 'rb') as dump_file:
+            (_feature_index_table, _label_index_table) = pickle.load (dump_file)
         
     if args.debug:
         logging.getLogger().setLevel (logging.DEBUG)
@@ -330,8 +359,13 @@ def main():
 
     khiopsFile2LibSvmFile (args.khiopsInputFile, args.libSVMFile, column_title_for_label = args.labelName)
     
-    if (args.dumpLabelMapping):
-        dumpLabelMappingToFile (args.dumpLabelMapping)
+    if (args.ppLabelMapping):
+        dumpLabelMappingToFile (args.ppLabelMapping)
+        
+    if args.dumpLabelMapping:
+        with open (args.labelMappingDumpFile, 'wb') as dump_file:
+            object_to_dump = (_feature_index_table, _label_index_table)
+            pickle.dump (object_to_dump, dump_file)       
     
 
 if __name__ == '__main__':
