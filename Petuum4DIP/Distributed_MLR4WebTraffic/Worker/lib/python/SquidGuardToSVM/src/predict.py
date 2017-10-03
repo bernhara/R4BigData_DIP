@@ -135,6 +135,16 @@ def main():
     test_sample_line_number = 1
     matched_predictions = 0
     unmatched_predictions = 0
+
+    # create an initialize the performance matrix
+    prediction_performance_matrix = {}    
+    num_labels = rebased_weights_representation["meta"]["num_labels"]
+    for _column in range (num_labels):
+        for _line in range (num_labels):
+            prediction_performance_matrix[_line,_column] = 0
+            
+    
+    
     for test_sample in rebased_test_sample_representation['vectors']:
         sample_label_index, sample_feature_sparse_vector = test_sample
         
@@ -143,6 +153,12 @@ def main():
         predicted_label_index, scores_sparse_vector = predict_label_index (feature_sparse_vector = sample_feature_sparse_vector,
                                                                            petuum_mlr_computed_weight_representation = rebased_weights_representation,
                                                                            one_based = args.oneBased)
+        
+        #
+        # count performance
+        #
+        
+        prediction_performance_matrix[sample_label_index, predicted_label_index] += 1
         
         # TODO: generate a formated output
         _index_probability_csv_output_format='{0:d}:{1:+f}'
@@ -165,8 +181,13 @@ def main():
     sample_size = test_sample_line_number - 1
     print ("Sample size: {}".format(sample_size))
     print ("\tamount of matched predictions: {}".format(matched_predictions))
-    print ("\tamount of unmatched predictions: {}".format(unmatched_predictions))    
-
+    print ("\tamount of unmatched predictions: {}".format(unmatched_predictions))
+    print ("Performance: ")
+    for _column in range (num_labels):
+        print ("\t", end='')
+        for _line in range (num_labels):
+            print (prediction_performance_matrix[_line,_column], end="\t")
+        print ()
 
 #
 # TEST CASES
