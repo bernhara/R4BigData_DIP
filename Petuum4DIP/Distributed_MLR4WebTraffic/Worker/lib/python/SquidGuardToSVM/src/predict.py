@@ -139,11 +139,10 @@ def main():
     # create an initialize the performance matrix
     prediction_performance_matrix = {}    
     num_labels = rebased_weights_representation["meta"]["num_labels"]
-    for _column in range (num_labels):
-        for _line in range (num_labels):
-            prediction_performance_matrix[_line,_column] = 0
-            
-    
+    for sample_label_index in range (num_labels):
+        for predicted_label_index in range (num_labels):
+            prediction_performance_matrix[sample_label_index,predicted_label_index] = 0
+   
     
     for test_sample in rebased_test_sample_representation['vectors']:
         sample_label_index, sample_feature_sparse_vector = test_sample
@@ -182,12 +181,29 @@ def main():
     print ("Sample size: {}".format(sample_size))
     print ("\tamount of matched predictions: {}".format(matched_predictions))
     print ("\tamount of unmatched predictions: {}".format(unmatched_predictions))
+    
+    #
+    # print performance statistics
+    #
     print ("Performance: ")
-    for _column in range (num_labels):
+    for sample_label_index in range (num_labels):
         print ("\t", end='')
-        for _line in range (num_labels):
-            print (prediction_performance_matrix[_line,_column], end="\t")
+        for predicted_label_index in range (num_labels):
+            print ('{:f}'.format (prediction_performance_matrix[sample_label_index,predicted_label_index]), end='\t')
         print ()
+    
+    overall_performance_sum = 0    
+    for sample_label_index in range (num_labels):
+        total_samples_for_this_label = 0
+        for predicted_label_index in range (num_labels):
+            total_samples_for_this_label += prediction_performance_matrix[sample_label_index,predicted_label_index]
+        if total_samples_for_this_label != 0:
+            proportion_of_good_classified_for_this_label = prediction_performance_matrix[sample_label_index,sample_label_index] / sample_size
+        
+        overall_performance_sum += proportion_of_good_classified_for_this_label
+        
+    average_overall_performance = overall_performance_sum / num_labels
+    print ("Overall performance: ", average_overall_performance)
 
 #
 # TEST CASES
