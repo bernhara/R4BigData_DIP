@@ -198,7 +198,7 @@ def main():
         for predicted_label_index in range (num_labels):
             total_samples_for_this_label += prediction_performance_matrix[sample_label_index,predicted_label_index]
         if total_samples_for_this_label != 0:
-            proportion_of_good_classified_for_this_label = prediction_performance_matrix[sample_label_index,sample_label_index] / sample_size
+            proportion_of_good_classified_for_this_label = prediction_performance_matrix[sample_label_index,sample_label_index] / total_samples_for_this_label
         
         overall_performance_sum += proportion_of_good_classified_for_this_label
         
