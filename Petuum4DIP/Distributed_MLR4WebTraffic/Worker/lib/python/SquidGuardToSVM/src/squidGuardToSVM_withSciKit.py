@@ -6,7 +6,16 @@ from sklearn.feature_extraction import DictVectorizer
 
 squid_access_log_line = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
 
-
+orderedHttpMethodsList = [
+    'GET',
+    'HEAD',
+    'POST',
+    'PUT',
+    'DELETE',
+    'CONNECT',
+    'OPTIONS',
+    'TRACE'
+]
 
 def parseLogLine (log_line):
     
