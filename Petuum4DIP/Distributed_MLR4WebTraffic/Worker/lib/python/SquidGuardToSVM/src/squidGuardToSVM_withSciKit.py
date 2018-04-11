@@ -2,6 +2,8 @@ import sys
 from datetime import datetime
 import urllib.parse
 
+import squidutils.io
+
 from sklearn.feature_extraction import DictVectorizer
 
 squid_access_log_line = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
@@ -17,35 +19,9 @@ orderedHttpMethodsList = [
     'TRACE'
 ]
 
-def parseLogLine (log_line):
-    
-    split_squid_access_log_line = log_line.split()
-    
-    log_line_dict = {}
-    field_index=0
-    log_line_dict['ts.tu'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['tr'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['>a'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['Ss/Hs'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['<st'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['rm'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['ru'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['[un'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['Sh/<a'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    log_line_dict['mt'] = split_squid_access_log_line[field_index]; field_index += 1
-    
-    return log_line_dict
 
-tt = parseLogLine (squid_access_log_line)
+
+tt = squidutils.io.parseLogLine (squid_access_log_line)
 
 def getValueStepIndex (step_list, v):
     
