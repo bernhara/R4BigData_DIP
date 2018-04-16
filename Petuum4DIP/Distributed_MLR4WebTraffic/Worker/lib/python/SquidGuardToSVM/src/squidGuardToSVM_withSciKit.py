@@ -239,8 +239,6 @@ def get_model_mapping_for_vectorizer ():
     
     feature_and_value_mapping_lists = []
     
-    #-------------
-  
     for feature_value_definition in _FEATURE_VALUE_DEFINITION_LIST:
         feature, label_mapping_specification = feature_value_definition
         labels, _ = label_mapping_specification
@@ -248,21 +246,6 @@ def get_model_mapping_for_vectorizer ():
         
         feature_and_value_mapping_lists.extend (feature_label_list)
         
- 
-        
-        
-        
-    #-------------
-
-    weekday_dict_list = [{'weekday':str(weekday_number)} for weekday_number in range(0,7)]
-    feature_and_value_mapping_lists.extend (weekday_dict_list)
-
-    hour_dict_list = [{'hour':str(hour)} for hour in range(0,24)]
-    feature_and_value_mapping_lists.extend (hour_dict_list)
-
-    quarter_dict_list = [{'quarter':str(quarter)} for quarter in range(0,4)]
-    feature_and_value_mapping_lists.extend (quarter_dict_list)
-    
     return feature_and_value_mapping_lists
     
 #=======================================================
