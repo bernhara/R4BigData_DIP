@@ -1,10 +1,12 @@
 import sys
+import logging
+
 from datetime import datetime
 import urllib.parse
 
 import squidutils.io
 
-from sklearn.feature_extraction import DictVectorizer
+import sklearn.feature_extraction
 
 _SQUID_ACCESS_LOG_LINE = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
 
@@ -164,45 +166,57 @@ def squid_log_line_to_model (log_line_dict):
     return log_line_model
 
 
-def getSquidLogKnownFeaturesList ():
+def get_model_mapping_for_vectorizer ():
     
-    feature_index_lists = []
+    feature_and_value_mapping_lists = []
 
-    feature_index_lists.extend ([{'request_method':'GET'}, {'request_method':'POST'}, {'request_method':'PUT'}, {'request_method':'CONNECT'}])
+    feature_and_value_mapping_lists.extend ([{'request_method':'GET'}, {'request_method':'POST'}, {'request_method':'PUT'}, {'request_method':'CONNECT'}])
 
-    feature_index_lists.extend ([{'request_url_scheme':'http'}, {'request_url_scheme':'https'}, {'request_url_scheme':'ftp'}])
+    feature_and_value_mapping_lists.extend ([{'request_url_scheme':'http'}, {'request_url_scheme':'https'}, {'request_url_scheme':'ftp'}])
     
     weekday_dict_list = [{'weekday':str(weekday_number)} for weekday_number in range(0,7)]
-    feature_index_lists.extend (weekday_dict_list)
+    feature_and_value_mapping_lists.extend (weekday_dict_list)
 
     hour_dict_list = [{'hour':str(hour)} for hour in range(0,24)]
-    feature_index_lists.extend (hour_dict_list)
+    feature_and_value_mapping_lists.extend (hour_dict_list)
 
     quarter_dict_list = [{'quarter':str(quarter)} for quarter in range(0,4)]
-    feature_index_lists.extend (quarter_dict_list)    
+    feature_and_value_mapping_lists.extend (quarter_dict_list)
+    
+    return feature_and_value_mapping_lists
     
 #=======================================================
 
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(message)s')
+
+#
+# build model mapper
+#
+
+squid_model_mapping = get_model_mapping_for_vectorizer()
+
+squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
+squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
+
+squid_log_to_dense_vector_mapper.fit (squid_model_mapping)
+# test
+encoded_features = squid_log_to_dense_vector_mapper.get_feature_names()
+
+#
+# analyze input log line
+#
+
 
 log_line_fields = squidutils.io.getLogLineFields (_SQUID_ACCESS_LOG_LINE)
+sample = squid_log_line_to_model (log_line_fields)
 
-zz = squid_log_line_to_model (log_line_fields)
+#
+# map to vector
+#
 
-
-
-    
-    
-
-v_dense = DictVectorizer(sparse=False, sort=False)
-v_sparse = DictVectorizer(sparse=True, sort=False)
-
-
-known_feature_label_list = initKnownFeaturesList()
-
-v_dense.fit (feature_index_lists)
-encoded_features = v_dense.get_feature_names()
-
-dense_sample = v_dense.transform (zz)
+dense_vector_sample = squid_log_to_sparse_vector_mapper.transform (sample)
+sparse_vector_sample = squid_log_to_sparse_vector_mapper.transform (sample)
 
 sys.exit(1)
 
@@ -212,10 +226,10 @@ feature_index_dict1 = { l:None for l in predefined_feature_list}
 
 #feature_index_dict1 = {'toto':0, 'foo':0, 'tt':0, 'bar':0, 'baz':0 }
 #feature_index_dict1 = {'toto':None, 'baz':None}
-feature_index_lists = [feature_index_dict1]
+feature_and_value_mapping_lists = [feature_index_dict1]
 
-v_dense.fit (feature_index_lists)
-v_sparse.fit (feature_index_lists)
+v_dense.fit (feature_and_value_mapping_lists)
+v_sparse.fit (feature_and_value_mapping_lists)
 
 
 samples = [{'foo': 1, 'bar': 2}, {'foo': 3, 'baz': 4}]
