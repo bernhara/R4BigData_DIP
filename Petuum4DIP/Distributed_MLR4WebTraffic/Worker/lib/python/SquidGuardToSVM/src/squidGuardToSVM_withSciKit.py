@@ -196,10 +196,15 @@ logging.basicConfig(level=logging.INFO,
 
 squid_model_mapping = get_model_mapping_for_vectorizer()
 
-squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
-squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
+# dense version
 
+squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
 squid_log_to_dense_vector_mapper.fit (squid_model_mapping)
+
+# sparse version
+squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
+squid_log_to_sparse_vector_mapper.fit (squid_model_mapping)
+
 # test
 encoded_features = squid_log_to_dense_vector_mapper.get_feature_names()
 
@@ -215,7 +220,7 @@ sample = squid_log_line_to_model (log_line_fields)
 # map to vector
 #
 
-dense_vector_sample = squid_log_to_sparse_vector_mapper.transform (sample)
+dense_vector_sample = squid_log_to_dense_vector_mapper.transform (sample)
 sparse_vector_sample = squid_log_to_sparse_vector_mapper.transform (sample)
 
 sys.exit(1)
