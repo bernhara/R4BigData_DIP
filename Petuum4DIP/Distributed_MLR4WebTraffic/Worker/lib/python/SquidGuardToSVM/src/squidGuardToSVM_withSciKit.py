@@ -126,11 +126,6 @@ def squid_log_line_to_model (log_line_dict):
     hour = req_datetime.hour
     minute = req_datetime.minute
     
-#  !!!!   label_specification = get_feature_specification ('quarter')
-#     
-#     quarter_mapping_specification = 
-#     hourly_quarter_label = float_to_discrete_labels ([15, 30, 45], minute, label_mapping=quarter_labels_list)
-    
     log_line_model['weekday'] = str(weekday)
     log_line_model['hour'] = str(hour)
     log_line_model['quarter'] = input_value_to_model_value (minute, 'quarter')
