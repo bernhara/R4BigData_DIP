@@ -14,19 +14,28 @@ _sample3 = '1523871148.490    270 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_TUN
 
 _SQUID_ACCESS_LOG_LINE = _sample1
 
+
+
+_ranges_to_labels = {
+    'quarter': ((15,30,45), ('q1', 'q2','q3','q4')),
+}
+
 _FEATURE_VALUE_DEFINITION_LIST = [
-        ('request_method', ['GET', 'POST', 'PUT', 'CONNECT']),
-        ('request_url_scheme', ['http', 'https', 'ftp']),
-        ('quarter', ['q1','q2','q3','q4']),
+    ('request_method', (['GET', 'POST', 'PUT', 'CONNECT'], None)),
+    ('quarter', (['q1', 'q2','q3','q4'], [15,30,45])),    
+    ('request_url_scheme', (['http', 'https', 'ftp'], None)),
 ]
 
 def get_labels_for_feature (feature):
+    
+    global _FEATURE_VALUE_DEFINITION_LIST
     
     # get all matching
     list_of_found_label_sets = [ l for (f, l) in _FEATURE_VALUE_DEFINITION_LIST if f == feature ]
     
     if len(list_of_found_label_sets) == 1:
-        return list_of_found_label_sets[0]
+        label_list, _  = list_of_found_label_sets[0]
+        return label_list
     else:
         # nothing or too much found
         # return empty list
@@ -183,14 +192,15 @@ def squid_log_line_to_model (log_line_dict):
 
 def get_model_mapping_for_vectorizer ():
     
-    global _feature_value_definition
+    global _FEATURE_VALUE_DEFINITION_LIST
     
     feature_and_value_mapping_lists = []
     
     #-------------
   
     for feature_value_definition in _FEATURE_VALUE_DEFINITION_LIST:
-        feature, labels = feature_value_definition
+        feature, label_mapping_specification = feature_value_definition
+        labels, _ = label_mapping_specification
         feature_label_list = [{feature:label} for label in labels]
         
         feature_and_value_mapping_lists.extend (feature_label_list)
