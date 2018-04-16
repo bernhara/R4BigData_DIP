@@ -423,10 +423,10 @@ class moduleTestCases (unittest.TestCase):
 
     def test_analyzeSingleLogLine_v1 (self):
         
-        squid_access_log_line = '''1495430914.656      1 192.168.1.24 TCP_MEM_HIT/200 4918 GET http://s3.amazonaws.com/anydo/prod/services.json - HIER_NONE/- application/octet-stream'''
+        _SQUID_ACCESS_LOG_LINE = '''1495430914.656      1 192.168.1.24 TCP_MEM_HIT/200 4918 GET http://s3.amazonaws.com/anydo/prod/services.json - HIER_NONE/- application/octet-stream'''
         squidGuard_result_string = '''squidguard_client_ip_addr=-&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=downloads&squidguard_url=http://s3.amazonaws.com/anydo/prod/services.json -/- - GET'''
 
-        test_result = analyzeSingleLogLine(squidGuard_result_string, squid_access_log_line)
+        test_result = analyzeSingleLogLine(squidGuard_result_string, _SQUID_ACCESS_LOG_LINE)
         
         expected_test_result = {'squidguard_client_ip_addr': '-', 'squidguard_domain_name': '', 'squidguard_client_user_id': '', 'squidguard_client_group': 'default', 'squidguard_target_group': 'downloads', 'squidguard_url': 'http://s3.amazonaws.com/anydo/prod/services.json', 'time': '1495430914.656', 'delay': '1', 'source_host': '192.168.1.24', 'squid_cache_result': 'TCP_MEM_HIT/200', 'what1': '4918', 'http_method': 'GET', 'full_url': 'http://s3.amazonaws.com/anydo/prod/services.json', 'what2': '-', 'destination_method_and_host': 'HIER_NONE/-', 'mime_type': 'application/octet-stream'}
         self.assertEqual(expected_test_result, test_result)    
@@ -434,10 +434,10 @@ class moduleTestCases (unittest.TestCase):
     
     def test_analyzeSingleLogLine_v2 (self):
         
-        squid_access_log_line = '''1495430914.656      1 192.168.1.24 TCP_MEM_HIT/200 4918 GET http://s3.amazonaws.com/anydo/prod/services.json - HIER_NONE/- application/octet-stream'''
+        _SQUID_ACCESS_LOG_LINE = '''1495430914.656      1 192.168.1.24 TCP_MEM_HIT/200 4918 GET http://s3.amazonaws.com/anydo/prod/services.json - HIER_NONE/- application/octet-stream'''
         squidGuard_result_string = '''OK rewrite-url="squidguard_client_ip_addr=-&squidguard_domain_name=&squidguard_client_user_id=&squidguard_client_group=default&squidguard_target_group=downloads&squidguard_url=http://s3.amazonaws.com/anydo/prod/services.json"'''
 
-        test_result = analyzeSingleLogLine(squidGuard_result_string, squid_access_log_line)
+        test_result = analyzeSingleLogLine(squidGuard_result_string, _SQUID_ACCESS_LOG_LINE)
         
         expected_test_result = {'squidguard_client_ip_addr': '-', 'squidguard_domain_name': '', 'squidguard_client_user_id': '', 'squidguard_client_group': 'default', 'squidguard_target_group': 'downloads', 'squidguard_url': 'http://s3.amazonaws.com/anydo/prod/services.json', 'time': '1495430914.656', 'delay': '1', 'source_host': '192.168.1.24', 'squid_cache_result': 'TCP_MEM_HIT/200', 'what1': '4918', 'http_method': 'GET', 'full_url': 'http://s3.amazonaws.com/anydo/prod/services.json', 'what2': '-', 'destination_method_and_host': 'HIER_NONE/-', 'mime_type': 'application/octet-stream'}
         self.assertEqual(expected_test_result, test_result)    
