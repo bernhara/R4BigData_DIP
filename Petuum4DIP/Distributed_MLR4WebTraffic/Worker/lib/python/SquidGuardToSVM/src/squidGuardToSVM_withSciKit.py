@@ -8,7 +8,11 @@ import squidutils.io
 
 import sklearn.feature_extraction
 
-_SQUID_ACCESS_LOG_LINE = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
+_sample1 = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
+_sample2 = '1523871301.106      0 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_MEM_HIT/200 677 GET http://tab-live.orange.fr/live-webapp/TAB/live/tile3.xml - HIER_NONE/- application/xml'
+_sample3 = '1523871148.490    270 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_TUNNEL/200 5556 CONNECT sso.orange.fr:443 - HIER_DIRECT/80.12.255.65 -'
+
+_SQUID_ACCESS_LOG_LINE = _sample1
 
 _ORDERED_HTTP_METHODS_LIST = [
     'GET',
@@ -165,10 +169,31 @@ def squid_log_line_to_model (log_line_dict):
         
     return log_line_model
 
+_feature_value_definition_list = [
+        ('request_method', ['GET', 'POST', 'PUT', 'CONNECT']),
+        ('request_url_scheme', ['http', 'https', 'ftp']),
+]
+
 
 def get_model_mapping_for_vectorizer ():
     
+    global _feature_value_definition
+    
     feature_and_value_mapping_lists = []
+    
+    #-------------
+  
+    for feature_value_definition in _feature_value_definition_list:
+        feature, labels = feature_value_definition
+        feature_label_list = [{feature:label} for label in labels]
+        
+        feature_and_value_mapping_lists.extend (feature_label_list)
+        
+ 
+        
+        
+        
+    #-------------
 
     feature_and_value_mapping_lists.extend ([{'request_method':'GET'}, {'request_method':'POST'}, {'request_method':'PUT'}, {'request_method':'CONNECT'}])
 
