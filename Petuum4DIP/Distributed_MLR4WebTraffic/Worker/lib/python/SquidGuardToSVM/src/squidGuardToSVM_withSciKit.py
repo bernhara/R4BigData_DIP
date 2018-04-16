@@ -44,10 +44,17 @@ def map_range_to_labels (value, range_list, label_mapping):
 
 _FEATURE_VALUE_DEFINITION_LIST = [
     ('request_method', (['GET', 'POST', 'PUT', 'CONNECT'], None)),
-    ('quarter', (['q1', 'q2','q3','q4'], (map_range_to_labels, [15,30,45]))),    
+
     ('request_url_scheme', (['http', 'https', 'ftp'], None)),
     
-    ('response_time_range', (['IMM', 'FAST', 'EVERAGE', 'LONG'], (map_range_to_labels, [500, 5000, 10000]))),
+    ('response_time_range', (['IMM', 'FAST', 'MEDIUM', 'LONG'], (map_range_to_labels, [500, 5000, 10000]))),
+    
+    ('response_size_range', (['EPSILON', 'SMALL', 'MEDIUM', 'LARGE'], (map_range_to_labels, [500, 5000, 10000]))),
+    
+    ('weekday', ([str(v) for v in range(0,7)], None)),
+    ('hour', ([str(v) for v in range(0,24)], None)),    
+    ('quarter', (['q1', 'q2','q3','q4'], (map_range_to_labels, [15,30,45]))),
+    
 ]
 
 
@@ -139,10 +146,7 @@ def squid_log_line_to_model (log_line_dict):
     
     response_time_string = req_time_string = log_line_dict['tr']
     response_time_ms = int(response_time_string)
-    
-    response_time_delay_steps = [ 500, 5000, 10000 ]
-    response_time_feature_value = float_to_discrete_labels (response_time_delay_steps, response_time_ms)
-    log_line_model['response_time_range'] = str(response_time_feature_value)
+    log_line_model['response_time_range'] = input_value_to_model_value (response_time_ms, 'response_time_range')
     
     #==============
     #
@@ -172,9 +176,7 @@ def squid_log_line_to_model (log_line_dict):
     response_size_string = log_line_dict['<st']
     response_size= int(response_size_string)
 
-    response_size_steps = [ 500, 5000, 10000 ]
-    response_size_feature_value = float_to_discrete_labels (response_size_steps, response_size)
-    log_line_model['response_size_range'] = str(response_size_feature_value)         
+    log_line_model['response_size_range'] = input_value_to_model_value (response_size, 'response_size_range')         
 
     #==============
     #
@@ -252,10 +254,6 @@ def get_model_mapping_for_vectorizer ():
         
     #-------------
 
-    feature_and_value_mapping_lists.extend ([{'request_method':'GET'}, {'request_method':'POST'}, {'request_method':'PUT'}, {'request_method':'CONNECT'}])
-
-    feature_and_value_mapping_lists.extend ([{'request_url_scheme':'http'}, {'request_url_scheme':'https'}, {'request_url_scheme':'ftp'}])
-    
     weekday_dict_list = [{'weekday':str(weekday_number)} for weekday_number in range(0,7)]
     feature_and_value_mapping_lists.extend (weekday_dict_list)
 
