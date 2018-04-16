@@ -1,7 +1,7 @@
 
 
 
-def parseLogLine (log_line):
+def getLogLineFields (log_line):
     
     split_squid_access_log_line = log_line.split()
     

@@ -6,9 +6,9 @@ import squidutils.io
 
 from sklearn.feature_extraction import DictVectorizer
 
-squid_access_log_line = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
+_SQUID_ACCESS_LOG_LINE = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
 
-orderedHttpMethodsList = [
+_ORDERED_HTTP_METHODS_LIST = [
     'GET',
     'HEAD',
     'POST',
@@ -21,7 +21,7 @@ orderedHttpMethodsList = [
 
 
 
-tt = squidutils.io.parseLogLine (squid_access_log_line)
+
 
 def getValueStepIndex (step_list, v):
     
@@ -36,11 +36,19 @@ def getValueStepIndex (step_list, v):
     
     
 
-def logLineDictToFeatures (log_line_dict):
+def squid_log_line_to_model (log_line_dict):
+    """ Constructs a model from the log line represented as a dict
     
-    feature_dict = {}
+    The model contains all input fields, mapped to values acceptable by the model
+    """
     
+    log_line_model = {}
+    
+    #==============
+    #
     # ts.tu => day + time slot
+    #
+    #==============
     
     req_time_string = log_line_dict['ts.tu']
     f = float (req_time_string)
@@ -53,91 +61,143 @@ def logLineDictToFeatures (log_line_dict):
     
     hourly_quarter = getValueStepIndex ([15, 30, 45], minute)
     
-    feature_dict['weekday'] = str(weekday)
-    feature_dict['hour'] = str(hour)
-    feature_dict['quarter'] = str(hourly_quarter)
+    log_line_model['weekday'] = str(weekday)
+    log_line_model['hour'] = str(hour)
+    log_line_model['quarter'] = str(hourly_quarter)
     
-    #--------
+    #==============
+    #
+    # tr => discrete values
+    #
+    #==============
     
     response_time_string = req_time_string = log_line_dict['tr']
     response_time_ms = int(response_time_string)
     
     response_time_delay_steps = [ 500, 5000, 10000 ]
     response_time_feature_value = getValueStepIndex (response_time_delay_steps, response_time_ms)
-    feature_dict['response_time_range'] = str(response_time_feature_value)
+    log_line_model['response_time_range'] = str(response_time_feature_value)
     
-    #--------
+    #==============
+    #
+    # >a
+    #
+    #==============
     
-    feature_dict['client_ip_source'] = log_line_dict['>a']
+    log_line_model['client_ip_source'] = log_line_dict['>a']
 
-    #--------
+    #==============
+    #
+    # Ss/Hs
+    #
+    #==============
     
     request_status = log_line_dict['Ss/Hs']
     squit_request_status, http_status_code = request_status.split('/')
     
-    feature_dict['http_status_code'] = http_status_code
+    log_line_model['http_status_code'] = http_status_code
     
-    #--------
+    #==============
+    #
+    # <st
+    #
+    #==============
     
     response_size_string = log_line_dict['<st']
     response_size= int(response_size_string)
 
     response_size_steps = [ 500, 5000, 10000 ]
     response_size_feature_value = getValueStepIndex (response_size_steps, response_size)
-    feature_dict['response_size_range'] = str(response_size_feature_value)         
+    log_line_model['response_size_range'] = str(response_size_feature_value)         
 
-    #--------
+    #==============
+    #
+    # rm
+    #
+    #==============
     
     request_method = log_line_dict['rm']    
-    feature_dict['request_method'] = request_method
+    log_line_model['request_method'] = request_method
     
-    #--------
+    #==============
+    #
+    # ru
+    #
+    #==============
     
     request_url = log_line_dict['ru']
     
     url = urllib.parse.urlparse (request_url,scheme='http')
     
-    feature_dict['request_url_scheme'] = url.scheme
-    feature_dict['request_url_hostname_len'] = len(url.hostname)
-    feature_dict['request_url_port'] = url.port
-    feature_dict['request_url_path_len'] = len(url.path)
+    log_line_model['request_url_scheme'] = url.scheme
+    log_line_model['request_url_hostname_len'] = len(url.hostname)
+    log_line_model['request_url_port'] = url.port
+    log_line_model['request_url_path_len'] = len(url.path)
     
-    #--------
+    #==============
+    #
+    # [un
+    #
+    #==============
     
     user_name = log_line_dict['[un']
     
-    #--------     
+    #==============
+    #
+    # Sh/<a
+    #
+    #==============
     
     _ = log_line_dict['Sh/<a'] 
 
-    #--------
+    #==============
+    #
+    # mt
+    #
+    #==============
      
     mime_content_type = log_line_dict['mt']
-    feature_dict['request_mime_content_type'] = mime_content_type
-        
-    return feature_dict
+    log_line_model['request_mime_content_type'] = mime_content_type
     
-zz = logLineDictToFeatures (tt)
+    #==============
+        
+    return log_line_model
 
+
+def getSquidLogKnownFeaturesList ():
+    
+    feature_index_lists = []
+
+    feature_index_lists.extend ([{'request_method':'GET'}, {'request_method':'POST'}, {'request_method':'PUT'}, {'request_method':'CONNECT'}])
+
+    feature_index_lists.extend ([{'request_url_scheme':'http'}, {'request_url_scheme':'https'}, {'request_url_scheme':'ftp'}])
+    
+    weekday_dict_list = [{'weekday':str(weekday_number)} for weekday_number in range(0,7)]
+    feature_index_lists.extend (weekday_dict_list)
+
+    hour_dict_list = [{'hour':str(hour)} for hour in range(0,24)]
+    feature_index_lists.extend (hour_dict_list)
+
+    quarter_dict_list = [{'quarter':str(quarter)} for quarter in range(0,4)]
+    feature_index_lists.extend (quarter_dict_list)    
+    
 #=======================================================
+
+
+log_line_fields = squidutils.io.getLogLineFields (_SQUID_ACCESS_LOG_LINE)
+
+zz = squid_log_line_to_model (log_line_fields)
+
+
+
+    
+    
 
 v_dense = DictVectorizer(sparse=False, sort=False)
 v_sparse = DictVectorizer(sparse=True, sort=False)
 
-feature_index_lists = []
 
-feature_index_lists.extend ([{'request_method':'GET'}, {'request_method':'POST'}, {'request_method':'PUT'}, {'request_method':'CONNECT'}])
-
-feature_index_lists.extend ([{'request_url_scheme':'http'}, {'request_url_scheme':'https'}, {'request_url_scheme':'ftp'}])
-
-weekday_dict_list = [{'weekday':str(weekday_number)} for weekday_number in range(0,7)]
-feature_index_lists.extend (weekday_dict_list)
-
-hour_dict_list = [{'hour':str(hour)} for hour in range(0,24)]
-feature_index_lists.extend (hour_dict_list)
-
-quarter_dict_list = [{'quarter':str(quarter)} for quarter in range(0,4)]
-feature_index_lists.extend (quarter_dict_list)
+known_feature_label_list = initKnownFeaturesList()
 
 v_dense.fit (feature_index_lists)
 encoded_features = v_dense.get_feature_names()
