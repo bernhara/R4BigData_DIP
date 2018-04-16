@@ -14,19 +14,42 @@ _sample3 = '1523871148.490    270 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_TUN
 
 _SQUID_ACCESS_LOG_LINE = _sample1
 
+def map_range_to_labels (value, range_list, label_mapping):
+    
+    step_index = 0
+    for step_value in range_list:
+        if value < step_value:
+            break
+        else:
+            step_index += 1
+            
+    label = label_mapping[step_index]
+    
+    return label
 
 
-_ranges_to_labels = {
-    'quarter': ((15,30,45), ('q1', 'q2','q3','q4')),
-}
+# Format:
+# [   => list of order features
+#    (   => tuple of
+#       feature name
+#       (  => tuple of
+#          ( list of possible labels )
+#          (  => tuple of
+#             value to label mapping function
+#             mapping function argument
+#          )
+#       )
+#    )
+# ]
 
 _FEATURE_VALUE_DEFINITION_LIST = [
     ('request_method', (['GET', 'POST', 'PUT', 'CONNECT'], None)),
-    ('quarter', (['q1', 'q2','q3','q4'], [15,30,45])),    
+    ('quarter', (['q1', 'q2','q3','q4'], (map_range_to_labels, [15,30,45]))),    
     ('request_url_scheme', (['http', 'https', 'ftp'], None)),
 ]
 
-def get_labels_for_feature (feature):
+
+def get_feature_specification (feature):
     
     global _FEATURE_VALUE_DEFINITION_LIST
     
@@ -34,29 +57,49 @@ def get_labels_for_feature (feature):
     list_of_found_label_sets = [ l for (f, l) in _FEATURE_VALUE_DEFINITION_LIST if f == feature ]
     
     if len(list_of_found_label_sets) == 1:
-        label_list, _  = list_of_found_label_sets[0]
-        return label_list
+        return list_of_found_label_sets[0]
     else:
         # nothing or too much found
         # return empty list
         return []
 
+def get_labels_for_feature (feature):
+    
+    feature_specification = get_feature_specification (feature)
+    
+    label_list, _  = feature_specification
+    return label_list
 
-def float_to_discrete_labels (ordered_step_list, v, label_mapping = None):
     
-    step_index = 0
-    for step_value in ordered_step_list:
-        if v < step_value:
-            break
-        else:
-            step_index += 1
-            
-    if label_mapping:
-        label = label_mapping[step_index]
+def get_mapping_specification_for_feature_definition (feature):
+    
+    feature_specification = get_feature_specification (feature)    
+ 
+ 
+    _, mapping_specification  = feature_specification
+    return mapping_specification
+
+def input_value_to_model_value (input_value, feature):
+    
+    model_value = None
+    
+    mapping_specification = get_mapping_specification_for_feature_definition (feature)
+    
+    if mapping_specification:
+        
+        mapping_function, mapping_function_range_arg = mapping_specification
+        label_list = get_labels_for_feature (feature)
+        mapped_value = mapping_function (value=input_value, range_list=mapping_function_range_arg, label_mapping=label_list)
+        
+        model_value = mapped_value
     else:
-        label=step_index
-    
-    return label
+        model_value = input_value
+        
+    return model_value
+        
+        
+        
+
     
     
 
@@ -83,12 +126,14 @@ def squid_log_line_to_model (log_line_dict):
     hour = req_datetime.hour
     minute = req_datetime.minute
     
-    quarter_labels_list = get_labels_for_feature ('quarter')
-    hourly_quarter_label = float_to_discrete_labels ([15, 30, 45], minute, label_mapping=quarter_labels_list)
+#  !!!!   label_specification = get_feature_specification ('quarter')
+#     
+#     quarter_mapping_specification = 
+#     hourly_quarter_label = float_to_discrete_labels ([15, 30, 45], minute, label_mapping=quarter_labels_list)
     
     log_line_model['weekday'] = str(weekday)
     log_line_model['hour'] = str(hour)
-    log_line_model['quarter'] = hourly_quarter_label
+    log_line_model['quarter'] = input_value_to_model_value (minute, 'quarter')
     
     #==============
     #
