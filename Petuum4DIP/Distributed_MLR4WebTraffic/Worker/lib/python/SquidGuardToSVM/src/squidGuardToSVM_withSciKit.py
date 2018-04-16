@@ -46,6 +46,8 @@ _FEATURE_VALUE_DEFINITION_LIST = [
     ('request_method', (['GET', 'POST', 'PUT', 'CONNECT'], None)),
     ('quarter', (['q1', 'q2','q3','q4'], (map_range_to_labels, [15,30,45]))),    
     ('request_url_scheme', (['http', 'https', 'ftp'], None)),
+    
+    ('response_time_range', (['IMM', 'FAST', 'EVERAGE', 'LONG'], (map_range_to_labels, [500, 5000, 10000]))),
 ]
 
 
@@ -119,7 +121,6 @@ def squid_log_line_to_model (log_line_dict):
     
     req_time_string = log_line_dict['ts.tu']
     f = float (req_time_string)
-    #!!! req_timestamp = time.gmtime (f)
     req_datetime = datetime.fromtimestamp (f)
     
     weekday = req_datetime.isoweekday()
