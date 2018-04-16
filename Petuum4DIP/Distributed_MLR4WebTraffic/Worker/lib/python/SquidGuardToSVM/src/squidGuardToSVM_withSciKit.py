@@ -14,31 +14,40 @@ _sample3 = '1523871148.490    270 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_TUN
 
 _SQUID_ACCESS_LOG_LINE = _sample1
 
-_ORDERED_HTTP_METHODS_LIST = [
-    'GET',
-    'HEAD',
-    'POST',
-    'PUT',
-    'DELETE',
-    'CONNECT',
-    'OPTIONS',
-    'TRACE'
+_FEATURE_VALUE_DEFINITION_LIST = [
+        ('request_method', ['GET', 'POST', 'PUT', 'CONNECT']),
+        ('request_url_scheme', ['http', 'https', 'ftp']),
+        ('quarter', ['q1','q2','q3','q4']),
 ]
 
+def get_labels_for_feature (feature):
+    
+    # get all matching
+    list_of_found_label_sets = [ l for (f, l) in _FEATURE_VALUE_DEFINITION_LIST if f == feature ]
+    
+    if len(list_of_found_label_sets) == 1:
+        return list_of_found_label_sets[0]
+    else:
+        # nothing or too much found
+        # return empty list
+        return []
 
 
-
-
-def getValueStepIndex (step_list, v):
+def float_to_discrete_labels (ordered_step_list, v, label_mapping = None):
     
     step_index = 0
-    for step in step_list:
-        if v < step:
+    for step_value in ordered_step_list:
+        if v < step_value:
             break
         else:
             step_index += 1
             
-    return step_index
+    if label_mapping:
+        label = label_mapping[step_index]
+    else:
+        label=step_index
+    
+    return label
     
     
 
@@ -65,11 +74,12 @@ def squid_log_line_to_model (log_line_dict):
     hour = req_datetime.hour
     minute = req_datetime.minute
     
-    hourly_quarter = getValueStepIndex ([15, 30, 45], minute)
+    quarter_labels_list = get_labels_for_feature ('quarter')
+    hourly_quarter_label = float_to_discrete_labels ([15, 30, 45], minute, label_mapping=quarter_labels_list)
     
     log_line_model['weekday'] = str(weekday)
     log_line_model['hour'] = str(hour)
-    log_line_model['quarter'] = str(hourly_quarter)
+    log_line_model['quarter'] = hourly_quarter_label
     
     #==============
     #
@@ -81,7 +91,7 @@ def squid_log_line_to_model (log_line_dict):
     response_time_ms = int(response_time_string)
     
     response_time_delay_steps = [ 500, 5000, 10000 ]
-    response_time_feature_value = getValueStepIndex (response_time_delay_steps, response_time_ms)
+    response_time_feature_value = float_to_discrete_labels (response_time_delay_steps, response_time_ms)
     log_line_model['response_time_range'] = str(response_time_feature_value)
     
     #==============
@@ -113,7 +123,7 @@ def squid_log_line_to_model (log_line_dict):
     response_size= int(response_size_string)
 
     response_size_steps = [ 500, 5000, 10000 ]
-    response_size_feature_value = getValueStepIndex (response_size_steps, response_size)
+    response_size_feature_value = float_to_discrete_labels (response_size_steps, response_size)
     log_line_model['response_size_range'] = str(response_size_feature_value)         
 
     #==============
@@ -169,10 +179,6 @@ def squid_log_line_to_model (log_line_dict):
         
     return log_line_model
 
-_feature_value_definition_list = [
-        ('request_method', ['GET', 'POST', 'PUT', 'CONNECT']),
-        ('request_url_scheme', ['http', 'https', 'ftp']),
-]
 
 
 def get_model_mapping_for_vectorizer ():
@@ -183,7 +189,7 @@ def get_model_mapping_for_vectorizer ():
     
     #-------------
   
-    for feature_value_definition in _feature_value_definition_list:
+    for feature_value_definition in _FEATURE_VALUE_DEFINITION_LIST:
         feature, labels = feature_value_definition
         feature_label_list = [{feature:label} for label in labels]
         
