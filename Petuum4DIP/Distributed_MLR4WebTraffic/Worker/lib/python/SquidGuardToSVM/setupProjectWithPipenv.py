@@ -2,6 +2,8 @@ import re
 import sys
 import os
 
+import subprocess
+
 os.putenv("PIPENV_VENV_IN_PROJECT", "1")
 
 # TODO: proxy config should be optional and confirable
@@ -24,10 +26,11 @@ os.putenv("PATH", new_PATH)
 
 pipenv_launch_command = quoted_sys_executable + ' -m pipenv ' + '--python ' + quoted_sys_executable
 
-command =  '"' + pipenv_launch_command + ' install --dev numpy"' 
+command =  '"' + pipenv_launch_command + ' install --dev numpy"'
+command =  pipenv_launch_command + ' install --dev numpy' 
 #!!command = '"set"'
 
 if __name__ == '__main__':
-    status = os.system(command)
+    status = subprocess.call(command)
     sys.exit (status)
     
