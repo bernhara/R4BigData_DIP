@@ -1,5 +1,15 @@
-import sys
+#! /usr/bin/env python3
+
+# coding: utf-8
+
+import argparse
+
+import unittest
+
 import logging
+logging.basicConfig (level=logging.WARNING)
+
+import sys
 
 from datetime import datetime
 import urllib.parse
@@ -8,11 +18,7 @@ import squidutils.io
 
 import sklearn.feature_extraction
 
-_sample1 = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
-_sample2 = '1523871301.106      0 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_MEM_HIT/200 677 GET http://tab-live.orange.fr/live-webapp/TAB/live/tile3.xml - HIER_NONE/- application/xml'
-_sample3 = '1523871148.490    270 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_TUNNEL/200 5556 CONNECT sso.orange.fr:443 - HIER_DIRECT/80.12.255.65 -'
 
-_SQUID_ACCESS_LOG_LINE = _sample1
 
 def map_range_to_labels (value, range_list, label_mapping):
     
@@ -250,74 +256,131 @@ def get_model_mapping_for_vectorizer ():
     
 #=======================================================
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s')
+def init_model_mapper (dense=True):
+    
+    model_mapper = None
+    
+    #
+    # build model mapper
+    #
+    
+    squid_model_mapping = get_model_mapping_for_vectorizer()
+    
+    if dense:
+    
+        # dense version
+        
+        squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
+        squid_log_to_dense_vector_mapper.fit (squid_model_mapping)
+        
+        model_mapper = squid_log_to_dense_vector_mapper
+    else:
+    
+        # sparse version
+        squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
+        squid_log_to_sparse_vector_mapper.fit (squid_model_mapping)
+        
+        model_mapper = squid_log_to_sparse_vector_mapper
+    
+    return model_mapper 
+
+def main():
+
+    squid_log_to_vector_mapper = init_model_mapper(dense=True)
+    
+    # test
+    encoded_features = squid_log_to_vector_mapper.get_feature_names()
+    
+    #
+    # analyze input log line
+    #
+    
+    
+    log_line_fields = squidutils.io.getLogLineFields (_SQUID_ACCESS_LOG_LINE)
+    sample = squid_log_line_to_model (log_line_fields)
+    
+    #
+    # map to vector
+    #
+    
+    dense_vector_sample = squid_log_to_dense_vector_mapper.transform (sample)
+    sparse_vector_sample = squid_log_to_sparse_vector_mapper.transform (sample)
+
 
 #
-# build model mapper
-#
+# TEST CASES
+# ==========
 
-squid_model_mapping = get_model_mapping_for_vectorizer()
+class moduleTestCases (unittest.TestCase):
+    
+    _sample1 = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
+    _sample2 = '1523871301.106      0 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_MEM_HIT/200 677 GET http://tab-live.orange.fr/live-webapp/TAB/live/tile3.xml - HIER_NONE/- application/xml'
+    _sample3 = '1523871148.490    270 2a01:cb1d:1ba:ec00:e0a5:5723:d989:12c1 TCP_TUNNEL/200 5556 CONNECT sso.orange.fr:443 - HIER_DIRECT/80.12.255.65 -'
 
-# dense version
+    def test_model_initialization (self):
+        
+        expected_test_result = ['request_method=GET', 'request_method=POST', 'request_method=PUT', 'request_method=CONNECT', 'request_url_scheme=http', 'request_url_scheme=https', 'request_url_scheme=ftp', 'response_time_range=IMM', 'response_time_range=FAST', 'response_time_range=MEDIUM', 'response_time_range=LONG', 'response_size_range=EPSILON', 'response_size_range=SMALL', 'response_size_range=MEDIUM', 'response_size_range=LARGE', 'weekday=0', 'weekday=1', 'weekday=2', 'weekday=3', 'weekday=4', 'weekday=5', 'weekday=6', 'hour=0', 'hour=1', 'hour=2', 'hour=3', 'hour=4', 'hour=5', 'hour=6', 'hour=7', 'hour=8', 'hour=9', 'hour=10', 'hour=11', 'hour=12', 'hour=13', 'hour=14', 'hour=15', 'hour=16', 'hour=17', 'hour=18', 'hour=19', 'hour=20', 'hour=21', 'hour=22', 'hour=23', 'quarter=q1', 'quarter=q2', 'quarter=q3', 'quarter=q4']
 
-squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
-squid_log_to_dense_vector_mapper.fit (squid_model_mapping)
-
-# sparse version
-squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
-squid_log_to_sparse_vector_mapper.fit (squid_model_mapping)
-
-# test
-encoded_features = squid_log_to_dense_vector_mapper.get_feature_names()
-
-#
-# analyze input log line
-#
-
-
-log_line_fields = squidutils.io.getLogLineFields (_SQUID_ACCESS_LOG_LINE)
-sample = squid_log_line_to_model (log_line_fields)
+        model_mapper = init_model_mapper(dense=True)
+ 
+        test_result = model_mapper.get_feature_names()        
+        self.assertEqual(expected_test_result, test_result)
+        
+        model_mapper = init_model_mapper(dense=False)
+ 
+        test_result = model_mapper.get_feature_names()        
+        self.assertEqual(expected_test_result, test_result)            
 
 #
-# map to vector
+# MAIN
+# ====
 #
 
-dense_vector_sample = squid_log_to_dense_vector_mapper.transform (sample)
-sparse_vector_sample = squid_log_to_sparse_vector_mapper.transform (sample)
 
-sys.exit(1)
+if __name__ == '__main__':
+    main()
+    
+################################################################################################
 
-
-predefined_feature_list = ['toto', 'foo', 'tt', 'bar', 'baz' ]
-feature_index_dict1 = { l:None for l in predefined_feature_list}
-
-#feature_index_dict1 = {'toto':0, 'foo':0, 'tt':0, 'bar':0, 'baz':0 }
-#feature_index_dict1 = {'toto':None, 'baz':None}
-feature_and_value_mapping_lists = [feature_index_dict1]
-
-v_dense.fit (feature_and_value_mapping_lists)
-v_sparse.fit (feature_and_value_mapping_lists)
+#
+# TRASH
+#
 
 
-samples = [{'foo': 1, 'bar': 2}, {'foo': 3, 'baz': 4}]
+def _code_to_remove ():
 
-samples = [{'bar': 3}, {'baz':4, 'foo':7}]
+    predefined_feature_list = ['toto', 'foo', 'tt', 'bar', 'baz' ]
+    feature_index_dict1 = { l:None for l in predefined_feature_list}
+    
+    #feature_index_dict1 = {'toto':0, 'foo':0, 'tt':0, 'bar':0, 'baz':0 }
+    #feature_index_dict1 = {'toto':None, 'baz':None}
+    feature_and_value_mapping_lists = [feature_index_dict1]
+    
+    v_dense.fit (feature_and_value_mapping_lists)
+    v_sparse.fit (feature_and_value_mapping_lists)
+    
+    
+    samples = [{'foo': 1, 'bar': 2}, {'foo': 3, 'baz': 4}]
+    
+    samples = [{'bar': 3}, {'baz':4, 'foo':7}]
+    
+    X2_dense = v_dense.transform(samples)
+    #X1_dense = v_dense.fit_transform(samples)
+    
+    X2_sparse = v_sparse.transform(samples)
+    #X1_sparse = v_sparse.fit_transform(samples)
+    
+    
+    
+    
+    pass
+    
+    F_dense = v_dense.get_feature_names()
+    F_sparse = v_sparse.get_feature_names()
+    
+    ZZ = v_dense.get_params()
+    
+    pass
 
-X2_dense = v_dense.transform(samples)
-#X1_dense = v_dense.fit_transform(samples)
-
-X2_sparse = v_sparse.transform(samples)
-#X1_sparse = v_sparse.fit_transform(samples)
 
 
-
-
-pass
-
-F_dense = v_dense.get_feature_names()
-F_sparse = v_sparse.get_feature_names()
-
-ZZ = v_dense.get_params()
-
-pass
