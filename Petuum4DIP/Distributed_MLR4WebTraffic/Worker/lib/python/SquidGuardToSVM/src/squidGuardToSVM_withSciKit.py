@@ -344,9 +344,7 @@ class moduleTestCases (unittest.TestCase):
         
         test_result = model_mapper.transform (cleared_log_line)
         numpy.testing.assert_array_equal(expected_test_result, test_result, verbose=True)
-
-        #!! self.assertEqual(expected_test_result, test_result)
-        
+       
           
 
 #
