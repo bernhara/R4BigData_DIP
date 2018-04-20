@@ -2,12 +2,12 @@
 
 # coding: utf-8
 
-import argparse
-
-import unittest
-
 import logging
 logging.basicConfig (level=logging.WARNING)
+import unittest
+
+import argparse
+import numpy
 
 import sys
 
@@ -288,9 +288,6 @@ def main():
 
     squid_log_to_vector_mapper = init_model_mapper(dense=True)
     
-    # test
-    encoded_features = squid_log_to_vector_mapper.get_feature_names()
-    
     #
     # analyze input log line
     #
@@ -328,8 +325,29 @@ class moduleTestCases (unittest.TestCase):
         
         model_mapper = init_model_mapper(dense=False)
  
-        test_result = model_mapper.get_feature_names()        
-        self.assertEqual(expected_test_result, test_result)            
+        test_result = model_mapper.get_feature_names()
+        self.assertEqual(expected_test_result, test_result)
+        
+    def test_dense_matrix_generation (self):
+        
+        sample = self._sample1
+        
+        expected_test_result = numpy.array([[1., 0., 0., 0., 1., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0.,
+        1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+        0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
+        0., 0.]])
+        
+        model_mapper = init_model_mapper(dense=True)
+        
+        log_line_field_list = squidutils.io.getLogLineFields (sample)
+        cleared_log_line = squid_log_line_to_model (log_line_field_list) 
+        
+        test_result = model_mapper.transform (cleared_log_line)
+        numpy.testing.assert_array_equal(expected_test_result, test_result, verbose=True)
+
+        #!! self.assertEqual(expected_test_result, test_result)
+        
+          
 
 #
 # MAIN
