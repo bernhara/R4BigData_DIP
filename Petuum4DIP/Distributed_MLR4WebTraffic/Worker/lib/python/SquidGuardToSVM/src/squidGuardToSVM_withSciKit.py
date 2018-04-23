@@ -18,6 +18,7 @@ import urllib.parse
 import squidutils.io
 
 import sklearn.feature_extraction
+import sklearn.datasets
 
 
 
@@ -287,6 +288,46 @@ def init_model_mapper (dense=True):
 
 def main():
     
+    
+    squid_log_to_vector_mapper = init_model_mapper(dense=True)
+    
+    #
+    # analyze input log line
+    #
+    _sample1 = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
+    
+    
+    
+    log_line_field_list = squidutils.io.getLogLineFields (_sample1)
+    cleared_log_line = squid_log_line_to_model (log_line_field_list)    
+    
+    #
+    # map to vector
+    #
+    
+    logline_as_matrix = squid_log_to_vector_mapper.transform(cleared_log_line)
+    
+    #
+    # dump to svmlight format
+    #
+    
+
+    
+    l1 = [1, 2, 3]
+    l2 = [2, 3, 4]
+    l3 = [1, 4, 3]
+
+    Xm = numpy.array([l1, l2, l3])
+    
+    X = Xm[:, 0:2]
+    y = Xm[:, 2]    
+    
+    sklearn.datasets.dump_svmlight_file(X, y, f="toto.txt", zero_based=True, comment="Comment for test", query_id=None, multilabel=False)
+    
+    
+    sys.exit(1)
+    # NOT REACHED
+    
     parser = argparse.ArgumentParser(description='Generates a LIB SVM formated file for Squid Access Logs which have been labeled by squidGuard.')
     parser.add_argument("-s", "--squidAccessLogFile", metavar='<squid access log>', type=str, dest="squidAccessLogFile", required=True, 
                         help='The Squid access log file.')
@@ -318,22 +359,7 @@ def main():
     else:
         _label_one_based = False    
 
-    squid_log_to_vector_mapper = init_model_mapper(dense=True)
-    
-    #
-    # analyze input log line
-    #
-    
-    
-    log_line_fields = squidutils.io.getLogLineFields (_SQUID_ACCESS_LOG_LINE)
-    sample = squid_log_line_to_model (log_line_fields)
-    
-    #
-    # map to vector
-    #
-    
-    dense_vector_sample = squid_log_to_dense_vector_mapper.transform (sample)
-    sparse_vector_sample = squid_log_to_sparse_vector_mapper.transform (sample)
+
 
 
 #
