@@ -355,16 +355,14 @@ class moduleTestCases (unittest.TestCase):
         0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
         0., 0.]])
         
-        expected_test_result = scipy.sparse.csr_matrix (expected_test_result_as_dense_matrix)
-        
         model_mapper = init_model_mapper(dense=False)
         
         log_line_field_list = squidutils.io.getLogLineFields (sample)
         cleared_log_line = squid_log_line_to_model (log_line_field_list) 
         
-        test_result = model_mapper.transform (cleared_log_line)
-        numpy.testing.assert_allclose(test_result, expected_test_result, verbose=True)        
-       
+        test_result_sparse = model_mapper.transform (cleared_log_line)
+        test_result = test_result_sparse.toarray()
+        numpy.testing.assert_array_equal(expected_test_result_as_dense_matrix, test_result, verbose=True)        
           
 
 #
