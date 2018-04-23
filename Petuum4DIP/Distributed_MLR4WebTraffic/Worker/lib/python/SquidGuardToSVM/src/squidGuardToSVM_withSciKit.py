@@ -2,15 +2,15 @@
 
 # coding: utf-8
 
+import sys
 import logging
 logging.basicConfig (level=logging.WARNING)
 import unittest
 
 import argparse
-import numpy
-import scipy
 
-import sys
+import numpy
+
 
 from datetime import datetime
 import urllib.parse
