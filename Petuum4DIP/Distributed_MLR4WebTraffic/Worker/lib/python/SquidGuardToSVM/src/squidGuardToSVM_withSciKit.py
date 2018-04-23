@@ -313,16 +313,16 @@ def main():
     
 
     
-    l1 = [1, 2, 3]
-    l2 = [2, 3, 4]
-    l3 = [1, 4, 3]
+    l1 = [1, 2, 3, 4, 5]
+    l2 = [2, 3, 4, 5, 5]
+    l3 = [1, 4, 3, 2, 1]
 
     Xm = numpy.array([l1, l2, l3])
     
-    X = Xm[:, 0:2]
-    y = Xm[:, 2]    
+    X = Xm[:, 2:]
+    y = Xm[:, :2]    
     
-    sklearn.datasets.dump_svmlight_file(X, y, f="toto.txt", zero_based=True, comment="Comment for test", query_id=None, multilabel=False)
+    sklearn.datasets.dump_svmlight_file(X, y, f="toto.txt", zero_based=True, comment="Comment for test", query_id=None, multilabel=True)
     
     
     sys.exit(1)
