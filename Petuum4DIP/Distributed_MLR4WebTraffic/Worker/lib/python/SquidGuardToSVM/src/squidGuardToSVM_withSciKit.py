@@ -285,7 +285,70 @@ def init_model_mapper (dense=True):
         
         model_mapper = squid_log_to_sparse_vector_mapper
     
-    return model_mapper 
+    return model_mapper
+
+def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName):
+    
+    global _feature_on_based
+    global _label_one_based
+    global _feature_dim
+    
+    libSvmLineFormat = buildWebRequestToLibSVMLineFormater ()
+    
+    input_file_line_numbers = 0
+    
+    # load
+    with open (squidGuardFileName, encoding = 'latin_1') as squidGuardOuputFile:
+        with open (squidAccessLogFileName, encoding = 'latin_1') as squidAccessLogFile:
+            with open (libSVMFileName, 'w') as libSVMFile:
+                while True:
+                                
+                    squidguardLine = squidGuardOuputFile.readline()
+                    if not squidguardLine:
+                        # enf of file
+                        break
+                    
+                    input_file_line_numbers += 1
+                    squidAccesLogLine = squidAccessLogFile.readline()
+                    
+                    web_request_analysis_dict = analyzeSingleLogLine (squidguardLine, squidAccesLogLine)
+                    
+                    logging.debug (web_request_analysis_dict)
+                    libsvm_formated_line = webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat)
+                    logging.debug (libsvm_formated_line)
+                    print (libsvm_formated_line, file=libSVMFile)
+    
+    # generate "meta" file        
+    libSVMMetaFileName = libSVMFileName + '.meta'
+    
+    num_train_total = input_file_line_numbers
+    # TODO: test with one worker, input file not split
+    num_train_this_partition = num_train_total
+    # FIXME: test file size is currently not computed
+    num_test = 1
+    num_labels = len (_squidGuardCategories)
+    
+    if _feature_one_based:
+        feature_one_based = 1
+    else:
+        feature_one_based = 0
+    
+    if _label_one_based:
+        label_one_based = 1
+    else:
+        label_one_based = 0
+          
+    snappy_compressed = 0
+    
+    with open (libSVMMetaFileName, 'w') as libSVMMetaFile:
+        print ('num_train_total: {}'.format (num_train_total), file=libSVMMetaFile)
+        print ('num_train_this_partition: {}'.format (num_train_this_partition), file=libSVMMetaFile)
+        print ('feature_dim: {}'.format (_feature_dim), file=libSVMMetaFile)
+        print ('num_labels: {}'.format (num_labels), file=libSVMMetaFile)
+        print ('format: libsvm', file=libSVMMetaFile)
+        print ('feature_one_based: {}'.format (feature_one_based), file=libSVMMetaFile)        
+        print ('label_one_based: {}'.format (label_one_based), file=libSVMMetaFile)
+        print ('snappy_compressed: {}'.format (snappy_compressed), file=libSVMMetaFile)
 
 def main():
     
@@ -318,19 +381,19 @@ def main():
     l2 = [2, 3, 4, 5, 5]
     l3 = [1, 4, 3, 2, 1]
 
-    Xm = numpy.array([l1, l2, l3])
+    Xm = numpy.array([l1, l2])
+    Xm = numpy.append (Xm, [l3], axis=0)
     
     X = Xm[:, 2:]
     y = Xm[:, :2]    
     
-    sklearn.datasets.dump_svmlight_file(X, y, f="toto.txt", zero_based=True, comment="Comment for test", query_id=None, multilabel=True)
-    
-    
     le = sklearn.preprocessing.LabelEncoder()
-    le.fit(["paris", "paris", "tokyo", "amsterdam"])
-    list(le.classes_)
-    le.transform(["tokyo", "tokyo", "paris"])
-    zz = le.inverse_transform([2, 2, 1])
+    le.fit(["l7", "l0", "l1", "l2", "l3"])
+    labels_for_all_lines = le.transform(["l0", "l2", "l1"])
+
+    #!! Xm_with_labels = numpy.insert(Xm, 0, labels, axis=1)
+    
+    sklearn.datasets.dump_svmlight_file(X=Xm, y=labels_for_all_lines, f="toto.txt", zero_based=True, comment="Comment for test", query_id=None, multilabel=False)    
     
     
     sys.exit(1)
