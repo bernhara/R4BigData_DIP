@@ -287,11 +287,6 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     le.fit(["l0", "l1", "l2", "l3"])
     label_as_vector = le.transform(["l2"])
     
-    zz = numpy.empty(shape=(1,1))
-    zz[0] = label_as_vector
-    
-    loc = numpy.array([100., 100.])
-
     return (label_as_vector, logline_as_vector)
     # FIXME: not reached!!                        
     
