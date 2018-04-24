@@ -279,18 +279,20 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     # map to vector
     #
     logline_as_matrix = squid_log_to_vector_mapper.transform(cleared_log_line)
+    # we are analyzing a single line, so matrix contains only one vector
+    logline_as_vector = logline_as_matrix[0]
                 
     # TODO: provide teh correct label
     le = sklearn.preprocessing.LabelEncoder()
     le.fit(["l0", "l1", "l2", "l3"])
-    label = le.transform(["l2"])
+    label_as_vector = le.transform(["l2"])
     
     zz = numpy.empty(shape=(1,1))
-    zz[0] = label
+    zz[0] = label_as_vector
     
-    
+    loc = numpy.array([100., 100.])
 
-    return (zz, logline_as_matrix)
+    return (label_as_vector, logline_as_vector)
     # FIXME: not reached!!                        
     
     
@@ -451,10 +453,10 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                 
                 logging.debug ((new_label_vector, new_feature_vector))
                 
-                squidAccesLog_array_with_new_line = numpy.append (squidAccesLog_array, new_feature_vector, axis=0)
+                squidAccesLog_array_with_new_line = numpy.append (squidAccesLog_array, [new_feature_vector], axis=0)
                 squidAccesLog_array = squidAccesLog_array_with_new_line
                                 
-                squidAccessLog_label_vector_with_new_line = numpy.append(squidAccessLog_label_vector, new_label_vector, axis=0)
+                squidAccessLog_label_vector_with_new_line = numpy.append(squidAccessLog_label_vector, [new_label_vector], axis=0)
                 squidAccessLog_label_vector = squidAccessLog_label_vector_with_new_line
                 
 
