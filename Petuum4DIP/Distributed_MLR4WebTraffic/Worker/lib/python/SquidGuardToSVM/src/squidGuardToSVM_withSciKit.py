@@ -280,17 +280,17 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     #
     logline_as_matrix = squid_log_to_vector_mapper.transform(cleared_log_line)
                 
-                
-    squidAccesLogLine_as_array_with_new_line = numpy.append (squidAccesLogLine_as_array, [logline_as_matrix], axis=0)
-    squidAccesLogLine_as_array = squidAccesLogLine_as_array_with_new_line
-    
-    
     # TODO: provide teh correct label
     le = sklearn.preprocessing.LabelEncoder()
     le.fit(["l0", "l1", "l2", "l3"])
-    label = le.transform("l2")
+    label = le.transform(["l2"])
     
-    return (label, squidAccesLogLine_as_array)
+    zz = numpy.empty(shape=(1,1))
+    zz[0] = label
+    
+    
+
+    return (zz, logline_as_matrix)
     # FIXME: not reached!!                        
     
     
@@ -429,8 +429,8 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     
     input_file_line_numbers = 0
     
-    squidAccesLog_array = None
-    squidAccessLog_label_vector = None
+    squidAccesLog_array = squid_log_to_vector_mapper.transform([])
+    squidAccessLog_label_vector = numpy.empty(shape=[0, 1])
     
     # load
     with open (squidGuardFileName, encoding = 'latin_1') as squidGuardOuputFile:
@@ -451,10 +451,10 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                 
                 logging.debug ((new_label_vector, new_feature_vector))
                 
-                squidAccesLog_array_with_new_line = numpy.append (squidAccesLog_array, [new_feature_vector], axis=0)
+                squidAccesLog_array_with_new_line = numpy.append (squidAccesLog_array, new_feature_vector, axis=0)
                 squidAccesLog_array = squidAccesLog_array_with_new_line
                                 
-                squidAccessLog_label_vector_with_new_line = numpy.append(squidAccessLog_label_vector, [new_label_vector], axis=0)
+                squidAccessLog_label_vector_with_new_line = numpy.append(squidAccessLog_label_vector, new_label_vector, axis=0)
                 squidAccessLog_label_vector = squidAccessLog_label_vector_with_new_line
                 
 
@@ -504,11 +504,11 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
 def main():
     
     
-    squid_log_to_vector_mapper = init_model_mapper(dense=True)
-    
-    squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log", squidAccessLogFileName="samples/input_test/access.log", libSVMFileName="toto.txt")
+    squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log.txt", squidAccessLogFileName="samples/input_test/access.log", libSVMFileName="toto.txt")
     return
     # FIXME: not reached
+    
+    squid_log_to_vector_mapper = init_model_mapper(dense=True)    
     
     #
     # analyze input log line
