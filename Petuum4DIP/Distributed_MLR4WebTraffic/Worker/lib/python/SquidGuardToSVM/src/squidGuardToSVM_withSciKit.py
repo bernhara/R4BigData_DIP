@@ -285,7 +285,12 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     squidAccesLogLine_as_array = squidAccesLogLine_as_array_with_new_line
     
     
-    return
+    # TODO: provide teh correct label
+    le = sklearn.preprocessing.LabelEncoder()
+    le.fit(["l0", "l1", "l2", "l3"])
+    label = le.transform("l2")
+    
+    return (label, squidAccesLogLine_as_array)
     # FIXME: not reached!!                        
     
     
@@ -419,7 +424,6 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     
     global _feature_on_based
     global _label_one_based
-    global _feature_dim
     
     squid_log_to_vector_mapper = init_model_mapper(dense=True)    
     
@@ -443,16 +447,21 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                 input_file_line_numbers += 1
                 squidAccesLogLine = squidAccessLogFile.readline()
                 
-                labeled_squidGuardSample = analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper)
+                (new_label_vector, new_feature_vector) = analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper)
                 
-                logging.debug (labeled_squidGuardSample)
-                (new_label, new_vector) = webRequestToLibSVMLine (web_request_analysis_dict, libSvmLineFormat)
+                logging.debug ((new_label_vector, new_feature_vector))
                 
-                squidAccesLog_array_with_new_line = numpy.append (squidAccesLog_array, [new_vector], axis=0)
-                squidAccesLog_array = squidAccesLog_array_with_new_line    
+                squidAccesLog_array_with_new_line = numpy.append (squidAccesLog_array, [new_feature_vector], axis=0)
+                squidAccesLog_array = squidAccesLog_array_with_new_line
+                                
+                squidAccessLog_label_vector_with_new_line = numpy.append(squidAccessLog_label_vector, [new_label_vector], axis=0)
+                squidAccessLog_label_vector = squidAccessLog_label_vector_with_new_line
                 
-                logging.debug (squidAccesLog_array_with_new_line)
+
                     
+    #
+    # dump to svmlight format
+    #
     with open (libSVMFileName, 'w') as libSVMFile:
         
         sklearn.datasets.dump_svmlight_file(X=squidAccesLog_array, y=squidAccessLog_label_vector, f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
@@ -496,6 +505,10 @@ def main():
     
     
     squid_log_to_vector_mapper = init_model_mapper(dense=True)
+    
+    squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log", squidAccessLogFileName="samples/input_test/access.log", libSVMFileName="toto.txt")
+    return
+    # FIXME: not reached
     
     #
     # analyze input log line
