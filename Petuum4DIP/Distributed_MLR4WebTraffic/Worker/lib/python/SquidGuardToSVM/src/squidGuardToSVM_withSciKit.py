@@ -21,6 +21,12 @@ import sklearn.feature_extraction
 import sklearn.datasets
 import sklearn.preprocessing
 
+#-------------------------------------------------------------------------------------------------------
+
+#
+# Feature management
+# ==================
+#
 
 
 def map_range_to_labels (value, range_list, label_mapping):
@@ -116,9 +122,110 @@ def input_value_to_model_value (input_value, feature):
     return model_value
         
         
-        
-
+def get_model_mapping_for_vectorizer ():
     
+    global _FEATURE_VALUE_DEFINITION_LIST
+    
+    feature_and_value_mapping_lists = []
+    
+    for feature_value_definition in _FEATURE_VALUE_DEFINITION_LIST:
+        feature, label_mapping_specification = feature_value_definition
+        labels, _ = label_mapping_specification
+        feature_label_list = [{feature:label} for label in labels]
+        
+        feature_and_value_mapping_lists.extend (feature_label_list)
+        
+    return feature_and_value_mapping_lists  
+
+#-------------------------------------------------------------------------------------------------------
+ 
+
+#
+# Label management
+# ================
+#
+
+def get_label_names_list (squidgard_configuraton_file_name):
+    
+    squidguard_categories = []
+    
+    with open (squidgard_configuraton_file_name) as squidgard_configuraton_file:
+        for line in squidgard_configuraton_file:
+            splitted_line = line.split(maxsplit=3)
+            if len (splitted_line) == 3:
+                if splitted_line[0] == 'dest':
+                    category = splitted_line[1]
+                    squidguard_categories.append(category)    
+    
+  
+    return squidguard_categories
+
+#-------------------------------------------------------------------------------------------------------
+
+#
+# create/initialize scikit feature and label tooling
+# ==================================================
+#
+
+def init_model_feature_mapper (dense=True):
+    
+    model_mapper = None
+    
+    #
+    # build model mapper
+    #
+    
+    squid_model_mapping = get_model_mapping_for_vectorizer()
+    
+    if dense:
+    
+        # dense version
+        
+        squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
+        squid_log_to_dense_vector_mapper.fit (squid_model_mapping)
+        
+        model_mapper = squid_log_to_dense_vector_mapper
+    else:
+    
+        # sparse version
+        squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
+        squid_log_to_sparse_vector_mapper.fit (squid_model_mapping)
+        
+        model_mapper = squid_log_to_sparse_vector_mapper
+    
+    return model_mapper
+
+def init_label_encoder (label_name_list):
+    
+    label_encoder = sklearn.preprocessing.LabelEncoder()
+    label_encoder.fit(label_name_list)
+    
+    
+    return label_encoder
+
+                  
+                  
+def dump_labels_to_file (label_encoder, categories_dump_file_name):
+    
+    # TODO: code does not use LabelEncoder
+    
+    global _squidGuardCategories
+    global _label_one_based
+    
+    if _label_one_based:
+        startIndex = 1
+    else:
+        startIndex = 0
+    
+    with open (categoriesDumpFileName, 'w') as categoriesDumpFile:
+        
+        for indexed_category in enumerate (_squidGuardCategories, start=startIndex):
+            print ('{} {}'.format(indexed_category[0], indexed_category[1]), file = categoriesDumpFile)
+
+     
+
+#-------------------------------------------------------------------------------------------------------
+  
     
 
 def squid_log_line_to_model (log_line_dict):
@@ -242,24 +349,11 @@ def squid_log_line_to_model (log_line_dict):
 
 
 
-def get_model_mapping_for_vectorizer ():
-    
-    global _FEATURE_VALUE_DEFINITION_LIST
-    
-    feature_and_value_mapping_lists = []
-    
-    for feature_value_definition in _FEATURE_VALUE_DEFINITION_LIST:
-        feature, label_mapping_specification = feature_value_definition
-        labels, _ = label_mapping_specification
-        feature_label_list = [{feature:label} for label in labels]
-        
-        feature_and_value_mapping_lists.extend (feature_label_list)
-        
-    return feature_and_value_mapping_lists
+
 
 ##########################################3
 
-def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper):
+def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper, label_encoder):
     
     #
     # analyze squidGuard input line to check if it is correct and does not lead to a crash later on
@@ -282,10 +376,8 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     # we are analyzing a single line, so matrix contains only one vector
     logline_as_vector = logline_as_matrix[0]
                 
-    # TODO: provide teh correct label
-    le = sklearn.preprocessing.LabelEncoder()
-    le.fit(["l0", "l1", "l2", "l3"])
-    label_as_vector = le.transform(["l2"])
+    # TODO: provide the correct label
+    label_as_vector = label_encoder.transform(["tracker"])
     
     return (label_as_vector, logline_as_vector)
     # FIXME: not reached!!                        
@@ -389,40 +481,17 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     
 #=======================================================
 
-def init_model_mapper (dense=True):
-    
-    model_mapper = None
-    
-    #
-    # build model mapper
-    #
-    
-    squid_model_mapping = get_model_mapping_for_vectorizer()
-    
-    if dense:
-    
-        # dense version
-        
-        squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
-        squid_log_to_dense_vector_mapper.fit (squid_model_mapping)
-        
-        model_mapper = squid_log_to_dense_vector_mapper
-    else:
-    
-        # sparse version
-        squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
-        squid_log_to_sparse_vector_mapper.fit (squid_model_mapping)
-        
-        model_mapper = squid_log_to_sparse_vector_mapper
-    
-    return model_mapper
+
 
 def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName):
     
     global _feature_on_based
     global _label_one_based
     
-    squid_log_to_vector_mapper = init_model_mapper(dense=True)    
+    squid_log_to_vector_mapper = init_model_feature_mapper(dense=True)
+    
+    squidguard_categories = get_label_names_list("samples/input_test/squidGuard.conf")
+    label_encoder = init_label_encoder(squidguard_categories)
     
     input_file_line_numbers = 0
     
@@ -444,7 +513,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                 input_file_line_numbers += 1
                 squidAccesLogLine = squidAccessLogFile.readline()
                 
-                (new_label_vector, new_feature_vector) = analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper)
+                (new_label_vector, new_feature_vector) = analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper, label_encoder)
                 
                 logging.debug ((new_label_vector, new_feature_vector))
                 
@@ -505,7 +574,7 @@ def main():
     return
     # FIXME: not reached
     
-    squid_log_to_vector_mapper = init_model_mapper(dense=True)    
+    squid_log_to_vector_mapper = init_model_feature_mapper(dense=True)    
     
     #
     # analyze input log line
@@ -599,12 +668,12 @@ class moduleTestCases (unittest.TestCase):
         
         expected_test_result = ['request_method=GET', 'request_method=POST', 'request_method=PUT', 'request_method=CONNECT', 'request_url_scheme=http', 'request_url_scheme=https', 'request_url_scheme=ftp', 'response_time_range=IMM', 'response_time_range=FAST', 'response_time_range=MEDIUM', 'response_time_range=LONG', 'response_size_range=EPSILON', 'response_size_range=SMALL', 'response_size_range=MEDIUM', 'response_size_range=LARGE', 'weekday=0', 'weekday=1', 'weekday=2', 'weekday=3', 'weekday=4', 'weekday=5', 'weekday=6', 'hour=0', 'hour=1', 'hour=2', 'hour=3', 'hour=4', 'hour=5', 'hour=6', 'hour=7', 'hour=8', 'hour=9', 'hour=10', 'hour=11', 'hour=12', 'hour=13', 'hour=14', 'hour=15', 'hour=16', 'hour=17', 'hour=18', 'hour=19', 'hour=20', 'hour=21', 'hour=22', 'hour=23', 'quarter=q1', 'quarter=q2', 'quarter=q3', 'quarter=q4']
 
-        model_mapper = init_model_mapper(dense=True)
+        model_mapper = init_model_feature_mapper(dense=True)
  
         test_result = model_mapper.get_feature_names()        
         self.assertEqual(expected_test_result, test_result)
         
-        model_mapper = init_model_mapper(dense=False)
+        model_mapper = init_model_feature_mapper(dense=False)
  
         test_result = model_mapper.get_feature_names()
         self.assertEqual(expected_test_result, test_result)
@@ -618,7 +687,7 @@ class moduleTestCases (unittest.TestCase):
         0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
         0., 0.]])
         
-        model_mapper = init_model_mapper(dense=True)
+        model_mapper = init_model_feature_mapper(dense=True)
         
         log_line_field_list = squidutils.io.getLogLineFields (sample)
         cleared_log_line = squid_log_line_to_model (log_line_field_list) 
@@ -635,7 +704,7 @@ class moduleTestCases (unittest.TestCase):
         0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
         0., 0.]])
         
-        model_mapper = init_model_mapper(dense=False)
+        model_mapper = init_model_feature_mapper(dense=False)
         
         log_line_field_list = squidutils.io.getLogLineFields (sample)
         cleared_log_line = squid_log_line_to_model (log_line_field_list) 
