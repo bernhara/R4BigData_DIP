@@ -370,7 +370,7 @@ def get_category_from_squidguard_log_line (squidguardLine):
             # in that case, it takes the form
             #    OK rewrite-url="<content produced by previous version of squidGuard"
             #
-            # We check if we encounter that case and extract the relevant content
+            # We check if we meet that case and extract the relevant content
             # from squidguardLine_rewrite_result which may indeed the form
             #    rewrite-url="<content produced by previous version of squidGuard"
             if squidguardLine_element.startswith('rewrite-url="'):
@@ -387,7 +387,6 @@ def get_category_from_squidguard_log_line (squidguardLine):
     if not squidguardLine_rewrite_result:
         # failed to find what we are searching for => unexpected
         logging.info ("no valid squidGuard resulting line found. Go on with a dummny line")
-        logging.debug ("\tSquid access log line: %s" % squidAccesLogLine)
         logging.debug ("\tsquidGuard resulting line: %s" % squidguardLine)
         #
         # rebuild a dummy line to prevent later crash
