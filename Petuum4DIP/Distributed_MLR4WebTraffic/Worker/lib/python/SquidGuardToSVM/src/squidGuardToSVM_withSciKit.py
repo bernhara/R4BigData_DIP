@@ -207,20 +207,24 @@ def init_label_encoder (label_name_list):
                   
 def dump_labels_to_file (label_encoder, categories_dump_file_name):
     
-    # TODO: code does not use LabelEncoder
-    
     global _squidGuardCategories
     global _label_one_based
     
+    all_label_list = list(label_encoder.classes_)
+    
+    # TODO: !! Manage label_one_based in dump_labels_to_file
+    _label_one_based = 0 # FIXME: !! to remove
     if _label_one_based:
         startIndex = 1
     else:
         startIndex = 0
     
-    with open (categoriesDumpFileName, 'w') as categoriesDumpFile:
+    with open (categories_dump_file_name, 'w') as categoriesDumpFile:
         
-        for indexed_category in enumerate (_squidGuardCategories, start=startIndex):
-            print ('{} {}'.format(indexed_category[0], indexed_category[1]), file = categoriesDumpFile)
+        for label in all_label_list:
+            transformed_label_array = label_encoder.transform([label])
+            transformed_label = transformed_label_array[0]
+            print ('{} {}'.format(transformed_label, label), file = categoriesDumpFile)
 
      
 
@@ -465,12 +469,11 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     # we are analyzing a single line, so matrix contains only one vector
     logline_as_vector = logline_as_matrix[0]
                 
-    # TODO: provide the correct label
+    # get the computed label
     squidguard_category = get_category_from_squidguard_log_line(squidguardLine)
     label_as_vector = label_encoder.transform([squidguard_category])
     
     return (label_as_vector, logline_as_vector)
-    # FIXME: not reached!!                        
     
     
 
@@ -479,15 +482,17 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
 
 
 
-def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName):
+def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName, squidGuardConfigurationFileName):
     
     global _feature_on_based
     global _label_one_based
     
     squid_log_to_vector_mapper = init_model_feature_mapper(dense=True)
     
-    squidguard_categories = get_label_names_list("samples/input_test/squidGuard.conf")
+    squidguard_categories = get_label_names_list(squidGuardConfigurationFileName)
     label_encoder = init_label_encoder(squidguard_categories)
+    
+    dump_labels_to_file (label_encoder, "toto2.txt")
     
     input_file_line_numbers = 0
     
@@ -529,7 +534,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
         sklearn.datasets.dump_svmlight_file(X=squidAccesLog_array, y=squidAccessLog_label_vector, f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
 
     return
-    # FIXME: not reached!!!
+    # TODO: !! Meta file is not generated
     
     # generate "meta" file        
     libSVMMetaFileName = libSVMFileName + '.meta'
@@ -566,9 +571,12 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
 def main():
     
     
-    squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log.txt", squidAccessLogFileName="samples/input_test/access.log", libSVMFileName="toto.txt")
+    squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log.txt",
+                                           squidAccessLogFileName="samples/input_test/access.log",
+                                           squidGuardConfigurationFileName="samples/input_test/squidGuard.conf",
+                                           libSVMFileName="toto.txt")
     return
-    # FIXME: not reached
+    # TODO: !! Main does not use command line args
     
     squid_log_to_vector_mapper = init_model_feature_mapper(dense=True)    
     
