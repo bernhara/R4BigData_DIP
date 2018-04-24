@@ -19,6 +19,7 @@ import squidutils.io
 
 import sklearn.feature_extraction
 import sklearn.datasets
+import sklearn.preprocessing
 
 
 
@@ -323,6 +324,13 @@ def main():
     y = Xm[:, :2]    
     
     sklearn.datasets.dump_svmlight_file(X, y, f="toto.txt", zero_based=True, comment="Comment for test", query_id=None, multilabel=True)
+    
+    
+    le = sklearn.preprocessing.LabelEncoder()
+    le.fit(["paris", "paris", "tokyo", "amsterdam"])
+    list(le.classes_)
+    le.transform(["tokyo", "tokyo", "paris"])
+    zz = le.inverse_transform([2, 2, 1])
     
     
     sys.exit(1)
