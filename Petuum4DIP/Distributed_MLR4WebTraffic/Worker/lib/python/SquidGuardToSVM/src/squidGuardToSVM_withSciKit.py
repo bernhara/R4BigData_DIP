@@ -5,6 +5,7 @@
 import sys
 import logging
 logging.basicConfig (level=logging.WARNING)
+
 import unittest
 
 import argparse
@@ -14,6 +15,7 @@ import numpy
 
 from datetime import datetime
 import urllib.parse
+import urlutils.normalize_url
 
 import squidutils.io
 
@@ -314,8 +316,14 @@ def squid_log_line_to_model (log_line_dict):
     #==============
     
     request_url = log_line_dict['ru']
+    normalized_request_url = urlutils.normalize_url.normalize_url (request_url)
     
-    url = urllib.parse.urlparse (request_url,scheme='http')
+    url = urllib.parse.urlparse (normalized_request_url,scheme='http')
+    
+    logging.debug('URL: ')
+    logging.debug(request_url)
+    logging.debug(normalized_request_url)    
+    logging.debug(url)
     
     log_line_model['request_url_scheme'] = url.scheme
     log_line_model['request_url_hostname_len'] = len(url.hostname)
@@ -568,7 +576,18 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
 
 def main():
     
+    parser = argparse.ArgumentParser(description='Generates a LIB SVM formated file for Squid Access Logs which have been labeled by squidGuard.')    
+    parser.add_argument("-d", "--debug", action='store_true', dest="debug")
     
+    args = parser.parse_args()   
+    
+    if args.debug:
+        logging.getLogger().setLevel (logging.DEBUG)
+        
+    #
+    # start analysis
+    #
+   
     squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log.txt",
                                            squidAccessLogFileName="samples/input_test/access.log",
                                            squidGuardConfigurationFileName="samples/input_test/squidGuard.conf",
@@ -622,7 +641,7 @@ def main():
     sys.exit(1)
     # NOT REACHED
     
-    parser = argparse.ArgumentParser(description='Generates a LIB SVM formated file for Squid Access Logs which have been labeled by squidGuard.')
+
     parser.add_argument("-s", "--squidAccessLogFile", metavar='<squid access log>', type=str, dest="squidAccessLogFile", required=True, 
                         help='The Squid access log file.')
     parser.add_argument("-g", "--squidGuardFile", metavar='<squidGuard out>', type=str, dest="squidGuardFile", required=True,
@@ -639,9 +658,9 @@ def main():
                         help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
                         help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
-    parser.add_argument("-d", "--debug", action='store_true', dest="debug")
+
     
-    args = parser.parse_args()
+
     
     if args.featureOneBased:
         _feature_one_based = True
