@@ -147,7 +147,7 @@ def get_model_mapping_for_vectorizer ():
 
 def get_label_names_list (squidgard_configuraton_file_name):
     
-    squidguard_categories = []
+    squidguard_categories = ['none'] # we have at least this label name
     
     with open (squidgard_configuraton_file_name) as squidgard_configuraton_file:
         for line in squidgard_configuraton_file:
@@ -491,8 +491,6 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     
     squidguard_categories = get_label_names_list(squidGuardConfigurationFileName)
     label_encoder = init_label_encoder(squidguard_categories)
-    
-    dump_labels_to_file (label_encoder, "toto2.txt")
     
     input_file_line_numbers = 0
     
