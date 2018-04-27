@@ -545,7 +545,10 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     #
     with open (libSVMFileName, 'w') as libSVMFile:
         
-        sklearn.datasets.dump_svmlight_file(X=squidAccesLog_array, y=squidAccessLog_label_vector[0], f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
+        X = squidAccesLog_array
+        y = squidAccessLog_label_vector[:,0]
+        
+        sklearn.datasets.dump_svmlight_file(X=X, y=y, f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
 
     return
     # TODO: !! Meta file is not generated
@@ -599,8 +602,7 @@ def main():
     squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log.txt",
                                            squidAccessLogFileName="samples/input_test/access.log",
                                            squidGuardConfigurationFileName="samples/input_test/squidGuard.conf",
-                                           libSVMFileName="toto.txt",
-                                           maxSamples=1)
+                                           libSVMFileName="toto.txt")
     return
     # TODO: !! Main does not use command line args
     
