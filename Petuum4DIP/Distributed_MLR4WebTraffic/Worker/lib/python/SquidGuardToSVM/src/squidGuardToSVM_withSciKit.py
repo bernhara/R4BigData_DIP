@@ -617,7 +617,12 @@ def main():
     if args.labelOneBased:
         _label_one_based = True
     else:
-        _label_one_based = False    
+        _label_one_based = False
+        
+    # TODO: what to do with "1"based
+    if (_label_one_based or _feature_one_based):
+        logging.critical("One base is not yet implemented")
+        sys.exit(1)
          
     
     if args.debug:
