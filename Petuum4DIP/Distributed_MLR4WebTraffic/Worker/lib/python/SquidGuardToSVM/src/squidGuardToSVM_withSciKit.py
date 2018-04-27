@@ -490,7 +490,7 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
 
 
 
-def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName, squidGuardConfigurationFileName):
+def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName, squidGuardConfigurationFileName, maxSamples = None):
     
     global _feature_on_based
     global _label_one_based
@@ -517,7 +517,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                     # enf of file
                     break
                 
-                input_file_line_numbers += 1
+
                 squidAccesLogLine = squidAccessLogFile.readline()
                 
                 (new_label_vector, new_feature_vector) = analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper, label_encoder)
@@ -530,6 +530,14 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                 squidAccessLog_label_vector_with_new_line = numpy.append(squidAccessLog_label_vector, [new_label_vector], axis=0)
                 squidAccessLog_label_vector = squidAccessLog_label_vector_with_new_line
                 
+                input_file_line_numbers += 1
+
+                if not maxSamples:
+                    pass
+                else:
+                    if input_file_line_numbers >= maxSamples:
+                        break
+               
 
                     
     #
@@ -537,7 +545,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     #
     with open (libSVMFileName, 'w') as libSVMFile:
         
-        sklearn.datasets.dump_svmlight_file(X=squidAccesLog_array, y=squidAccessLog_label_vector, f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
+        sklearn.datasets.dump_svmlight_file(X=squidAccesLog_array, y=squidAccessLog_label_vector[0], f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
 
     return
     # TODO: !! Meta file is not generated
@@ -591,7 +599,8 @@ def main():
     squidGuardOutputFileToLibSVMInputFile (squidGuardFileName="samples/input_test/squidGuardClassified_access_log.txt",
                                            squidAccessLogFileName="samples/input_test/access.log",
                                            squidGuardConfigurationFileName="samples/input_test/squidGuard.conf",
-                                           libSVMFileName="toto.txt")
+                                           libSVMFileName="toto.txt",
+                                           maxSamples=1)
     return
     # TODO: !! Main does not use command line args
     
