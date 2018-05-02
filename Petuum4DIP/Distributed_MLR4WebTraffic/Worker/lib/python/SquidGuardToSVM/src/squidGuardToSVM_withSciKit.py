@@ -23,6 +23,15 @@ import sklearn.feature_extraction
 import sklearn.datasets
 import sklearn.preprocessing
 
+#========================================================================
+#
+# Global configuration pamaters and constants
+#
+#========================================================================
+
+_feature_on_based = False
+_label_one_based = False
+    
 #-------------------------------------------------------------------------------------------------------
 
 #
@@ -550,10 +559,9 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
         
         sklearn.datasets.dump_svmlight_file(X=X, y=y, f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
 
-    return
-    # TODO: !! Meta file is not generated
-    
-    # generate "meta" file        
+    #   
+    # generate "meta" file
+    #        
     libSVMMetaFileName = libSVMFileName + '.meta'
     
     num_train_total = input_file_line_numbers
@@ -561,7 +569,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     num_train_this_partition = num_train_total
     # FIXME: test file size is currently not computed
     num_test = 1
-    num_labels = len (_squidGuardCategories)
+    num_labels = len (squid_log_to_vector_mapper.get_feature_names())
     
     if _feature_one_based:
         feature_one_based = 1
@@ -769,6 +777,8 @@ if __name__ == '__main__':
 
 
 def _code_to_remove ():
+    
+    # TODO: remove thos code
 
     predefined_feature_list = ['toto', 'foo', 'tt', 'bar', 'baz' ]
     feature_index_dict1 = { l:None for l in predefined_feature_list}
