@@ -216,7 +216,7 @@ def init_label_encoder (label_name_list):
 
                   
                   
-def dump_labels_to_file (label_encoder, categories_dump_file_name):
+def dump_labels_to_file (label_encoder, categories_dump_file_name, comment = None):
     
     global _squidGuardCategories
     global _label_one_based
@@ -231,6 +231,8 @@ def dump_labels_to_file (label_encoder, categories_dump_file_name):
         startIndex = 0
     
     with open (categories_dump_file_name, 'w') as categoriesDumpFile:
+        
+        print ('# {}'.format (comment), file=categoriesDumpFile)        
         
         for label in all_label_list:
             transformed_label_array = label_encoder.transform([label])
@@ -499,7 +501,12 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
 
 
 
-def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName, squidGuardConfigurationFileName, maxSamples = None):
+def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
+                                           squidAccessLogFileName,
+                                           libSVMFileName,
+                                           squidGuardConfigurationFileName,
+                                           maxSamples = None,
+                                           labelListDumpFileName = None):
     
     global _feature_one_based
     global _label_one_based
@@ -559,8 +566,8 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     #
     # dump to svmlight format
     #
+    logging.info ('Generating LIBSvm file: {}'.format(libSVMFileName))
     with open (libSVMFileName, 'w') as libSVMFile:
-        
         X = squidAccesLog_array
         y = squidAccessLog_label_vector[:,0]
         
@@ -568,8 +575,9 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
 
     #   
     # generate "meta" file
-    #        
+    #
     libSVMMetaFileName = libSVMFileName + '.meta'
+    logging.info ('Generating corresponding "meta" file: {}'.format(libSVMMetaFileName))
     
     num_train_total = input_file_line_numbers
     # TODO: test with one worker, input file not split
@@ -601,6 +609,14 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
         print ('feature_one_based: {}'.format (feature_one_based), file=libSVMMetaFile)        
         print ('label_one_based: {}'.format (label_one_based), file=libSVMMetaFile)
         print ('snappy_compressed: {}'.format (snappy_compressed), file=libSVMMetaFile)
+        
+    #
+    # dump labels
+    #
+    if labelListDumpFileName:
+        logging.info ('Generating label index table to file: {}'.format(labelListDumpFileName))
+        dump_labels_to_file (label_encoder, labelListDumpFileName, comment='Generated at: {}'.format (hr_now))
+        
 
 def main():
     
@@ -652,7 +668,8 @@ def main():
     squidGuardOutputFileToLibSVMInputFile (squidGuardFileName=args.squidGuardFile,
                                            squidAccessLogFileName=args.squidAccessLogFile,
                                            squidGuardConfigurationFileName=args.squidGuardConfigurationFile,
-                                           libSVMFileName=args.libSVMFile)
+                                           libSVMFileName=args.libSVMFile,
+                                           labelListDumpFileName = args.categoriesDumpFile)
     return
     # TODO: !! Main does not use command line args
     
