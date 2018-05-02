@@ -548,6 +548,13 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
                         break
                
 
+    #
+    # Dumps
+    # -----
+    #
+
+    now = datetime.now()
+    hr_now = now.strftime("%A %d/%m/%Y %Hh%M")
                     
     #
     # dump to svmlight format
@@ -557,7 +564,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
         X = squidAccesLog_array
         y = squidAccessLog_label_vector[:,0]
         
-        sklearn.datasets.dump_svmlight_file(X=X, y=y, f=libSVMFileName, zero_based=True, comment="Comment for test", query_id=None, multilabel=False)            
+        sklearn.datasets.dump_svmlight_file(X=X, y=y, f=libSVMFileName, zero_based=True, comment='Generated at: {}'.format (hr_now), query_id=None, multilabel=False)            
 
     #   
     # generate "meta" file
@@ -585,6 +592,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFil
     snappy_compressed = 0
     
     with open (libSVMMetaFileName, 'w') as libSVMMetaFile:
+        print ('# Generated at: {}'.format (hr_now), file=libSVMMetaFile)
         print ('num_train_total: {}'.format (num_train_total), file=libSVMMetaFile)
         print ('num_train_this_partition: {}'.format (num_train_this_partition), file=libSVMMetaFile)
         print ('feature_dim: {}'.format (feature_dim), file=libSVMMetaFile)
