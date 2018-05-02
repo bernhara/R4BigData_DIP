@@ -29,7 +29,7 @@ import sklearn.preprocessing
 #
 #========================================================================
 
-_feature_on_based = False
+_feature_one_based = False
 _label_one_based = False
     
 #-------------------------------------------------------------------------------------------------------
@@ -501,7 +501,7 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
 
 def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName, squidAccessLogFileName, libSVMFileName, squidGuardConfigurationFileName, maxSamples = None):
     
-    global _feature_on_based
+    global _feature_one_based
     global _label_one_based
     
     squid_log_to_vector_mapper = init_model_feature_mapper(dense=True)
