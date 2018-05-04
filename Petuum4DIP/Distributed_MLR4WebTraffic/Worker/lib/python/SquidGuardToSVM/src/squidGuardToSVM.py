@@ -499,8 +499,6 @@ def analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector
     
 #=======================================================
 
-
-
 def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
                                            squidAccessLogFileName,
                                            libSVMFileName,
@@ -526,8 +524,6 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
         with open (squidAccessLogFileName, encoding = 'latin_1') as squidAccessLogFile:
             while True:
                 
-
-                                
                 squidguardLine = squidGuardOuputFile.readline()
                 if not squidguardLine:
                     # enf of file
@@ -638,6 +634,8 @@ def main():
                         help='If true, feature indexes start at "1", "0" else (default is false => first feature index is "0"')
     parser.add_argument("--labelOneBased", action='store_true', dest="labelOneBased",
                         help='If true, labels indexes start at "1", "0" else (default is false => first label index is "0"')
+    parser.add_argument("--sampleLimit", type=int, dest="sampleLimit", required=False,
+                        help='Number of samples (lines) to consider from <squid access log> file. Remaining line will be ignored.')    
 
     
     args = parser.parse_args()
@@ -669,7 +667,8 @@ def main():
                                            squidAccessLogFileName=args.squidAccessLogFile,
                                            squidGuardConfigurationFileName=args.squidGuardConfigurationFile,
                                            libSVMFileName=args.libSVMFile,
-                                           labelListDumpFileName = args.categoriesDumpFile)
+                                           labelListDumpFileName = args.categoriesDumpFile,
+                                           maxSamples = args.sampleLimit)
     return
     # TODO: !! Main does not use command line args
     
