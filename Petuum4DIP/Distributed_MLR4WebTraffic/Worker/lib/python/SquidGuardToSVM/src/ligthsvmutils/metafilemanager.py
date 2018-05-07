@@ -41,7 +41,7 @@ class LightSVMMetaExtentions():
         self._feature_one_based = feature_one_based
         self._label_one_based = label_one_based        
         
-    def dump_svmlight_metaparamsfile(self, libSVMMetaFileName, comment=None):
+    def dump_svmlight_metafile(self, libSVMMetaFileName, comment=None):
         
         #   
         # sqving "meta" file

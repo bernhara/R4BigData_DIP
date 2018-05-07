@@ -583,7 +583,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
     feature_dim = len (squid_log_to_vector_mapper.get_feature_names())
     num_labels = label_encoder.classes_.size
     
-    lightsvm_meta_params = ligthsvmutils.metafilemanager (
+    lightsvm_meta_params = ligthsvmutils.metafilemanager.LightSVMMetaExtentions (
         num_train_total = num_train_total,
         num_train_this_partition = num_train_this_partition,
         num_test = num_test,
@@ -593,7 +593,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
 
     logging.info ('Generating corresponding "meta" file')
     libSVMMetaFileName = libSVMFileName + '.meta'
-    lightsvm_meta_params.dump_svmlight_metaparamsfile (libSVMMetaFileName, comment=comment='Generated at: {}'.format (hr_now))
+    lightsvm_meta_params.dump_svmlight_metafile (libSVMMetaFileName, comment='Generated at: {}'.format (hr_now))
 
 
     #
