@@ -48,7 +48,7 @@ class LightSVMMetaExtentions():
         #   
         # sqving "meta" file
         #
-        _logger.info ('Generating corresponding "meta" file: {}'.format(libSVMMetaFileName))
+        _logger.debug ('Writing "meta" params to file : {}'.format(libSVMMetaFileName))
         
         now = datetime.now()
         hr_now = now.strftime("%A %d/%m/%Y %Hh%M")

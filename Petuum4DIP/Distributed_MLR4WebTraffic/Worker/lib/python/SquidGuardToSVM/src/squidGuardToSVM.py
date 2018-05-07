@@ -23,6 +23,8 @@ import sklearn.feature_extraction
 import sklearn.datasets
 import sklearn.preprocessing
 
+import ligthsvmutils.metafilemanager
+
 #========================================================================
 #
 # Global configuration pamaters and constants
@@ -572,8 +574,6 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
     #   
     # generate "meta" file
     #
-    libSVMMetaFileName = libSVMFileName + '.meta'
-    logging.info ('Generating corresponding "meta" file: {}'.format(libSVMMetaFileName))
     
     num_train_total = input_file_line_numbers
     # TODO: test with one worker, input file not split
@@ -583,29 +583,19 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
     feature_dim = len (squid_log_to_vector_mapper.get_feature_names())
     num_labels = label_encoder.classes_.size
     
-    if _feature_one_based:
-        feature_one_based = 1
-    else:
-        feature_one_based = 0
+    lightsvm_meta_params = ligthsvmutils.metafilemanager (
+        num_train_total = num_train_total,
+        num_train_this_partition = num_train_this_partition,
+        num_test = num_test,
+        feature_dim = feature_dim,
+        num_labels = num_labels)
     
-    if _label_one_based:
-        label_one_based = 1
-    else:
-        label_one_based = 0
-          
-    snappy_compressed = 0
-    
-    with open (libSVMMetaFileName, 'w') as libSVMMetaFile:
-        print ('# Generated at: {}'.format (hr_now), file=libSVMMetaFile)
-        print ('num_train_total: {}'.format (num_train_total), file=libSVMMetaFile)
-        print ('num_train_this_partition: {}'.format (num_train_this_partition), file=libSVMMetaFile)
-        print ('feature_dim: {}'.format (feature_dim), file=libSVMMetaFile)
-        print ('num_labels: {}'.format (num_labels), file=libSVMMetaFile)
-        print ('format: libsvm', file=libSVMMetaFile)
-        print ('feature_one_based: {}'.format (feature_one_based), file=libSVMMetaFile)        
-        print ('label_one_based: {}'.format (label_one_based), file=libSVMMetaFile)
-        print ('snappy_compressed: {}'.format (snappy_compressed), file=libSVMMetaFile)
-        
+
+    logging.info ('Generating corresponding "meta" file')
+    libSVMMetaFileName = libSVMFileName + '.meta'
+    lightsvm_meta_params.save (libSVMMetaFileName)   
+
+
     #
     # dump labels
     #
