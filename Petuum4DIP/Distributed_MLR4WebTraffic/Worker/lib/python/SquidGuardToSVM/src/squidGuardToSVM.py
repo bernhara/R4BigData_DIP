@@ -593,7 +593,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
 
     logging.info ('Generating corresponding "meta" file')
     libSVMMetaFileName = libSVMFileName + '.meta'
-    lightsvm_meta_params.save (libSVMMetaFileName)   
+    lightsvm_meta_params.dump_svmlight_metaparamsfile (libSVMMetaFileName, comment=comment='Generated at: {}'.format (hr_now))
 
 
     #

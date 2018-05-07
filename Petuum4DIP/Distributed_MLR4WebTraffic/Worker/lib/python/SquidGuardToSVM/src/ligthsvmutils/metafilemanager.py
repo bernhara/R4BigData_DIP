@@ -1,8 +1,6 @@
 import logging
 _logger = logging.getLogger(__name__)
 
-from datetime import datetime
-
 class LightSVMMetaExtentions():
     
     '''
@@ -43,15 +41,12 @@ class LightSVMMetaExtentions():
         self._feature_one_based = feature_one_based
         self._label_one_based = label_one_based        
         
-    def save(self, libSVMMetaFileName):
+    def dump_svmlight_metaparamsfile(self, libSVMMetaFileName, comment=None):
         
         #   
         # sqving "meta" file
         #
         _logger.debug ('Writing "meta" params to file : {}'.format(libSVMMetaFileName))
-        
-        now = datetime.now()
-        hr_now = now.strftime("%A %d/%m/%Y %Hh%M")
         
         if self._feature_one_based:
             feature_one_based = 1
@@ -64,7 +59,8 @@ class LightSVMMetaExtentions():
             label_one_based = 0
         
         with open (libSVMMetaFileName, 'w') as libSVMMetaFile:
-            print ('# Generated at: {}'.format (hr_now), file=libSVMMetaFile)
+            if comment:
+                print ('# {}'.format (comment), file=libSVMMetaFile)
             print ('num_train_total: {}'.format (self._num_train_total), file=libSVMMetaFile)
             print ('num_train_this_partition: {}'.format (self._num_train_this_partition), file=libSVMMetaFile)
             print ('feature_dim: {}'.format (self._feature_dim), file=libSVMMetaFile)
