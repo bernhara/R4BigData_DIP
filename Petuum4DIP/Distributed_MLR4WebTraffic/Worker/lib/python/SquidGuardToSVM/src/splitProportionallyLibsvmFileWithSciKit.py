@@ -48,8 +48,19 @@ def main():
     # ===================================================
     #
     
+    # get META elements
+    
+    libSVM_meta_file_name = args.libSVMFile + '.meta'
+    lightsvm_meta_params = ligthsvmutils.metafilemanager.getLightSVMTrainMetaExtentionsFromFile (libSVM_meta_file_name)
+    
     with open (args.libSVMFile, 'rb') as libSVMFile: 
-        data = sklearn.datasets.load_svmlight_file(libSVMFile)
+        data = sklearn.datasets.load_svmlight_file(libSVMFile, n_features = lightsvm_meta_params._feature_dim, zero_based = True, multilabel = False, offset = 0)
+    X = data[0]
+    y = data[1]
+    
+    X_dense = X.todense()
+    
+    data1 = sklearn.datasets.load_svmlight_file(libSVMFile)
     
     pass
 
