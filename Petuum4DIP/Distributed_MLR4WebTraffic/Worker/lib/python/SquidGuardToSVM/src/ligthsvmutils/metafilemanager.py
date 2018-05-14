@@ -1,20 +1,17 @@
 import logging
 _logger = logging.getLogger(__name__)
 
-class LightSVMMetaExtentions():
+class LightSVMTrainMetaExtentions():
     
     '''
     classdocs: TbD
     '''
     
-
     _num_train_total = None
     _num_train_this_partition = None
-    _num_test = None
     _feature_dim = None
     _num_labels = None
                      
-
     _feature_one_based = None
     _label_one_based = None
     
@@ -24,11 +21,10 @@ class LightSVMMetaExtentions():
     def __init__(self,
                  num_train_total,
                  num_train_this_partition,
-                 num_test,
                  feature_dim,
                  num_labels,
-                 feature_one_based = False,
-                 label_one_based = False):
+                 feature_one_based,
+                 label_one_based):
         '''
         Constructor
         '''
@@ -70,3 +66,61 @@ class LightSVMMetaExtentions():
             print ('label_one_based: {}'.format (label_one_based), file=libSVMMetaFile)
             print ('snappy_compressed: {}'.format (self._snappy_compressed), file=libSVMMetaFile)
             
+            
+def _cleanup_string_read_from_file (line):
+    '''
+    to prevent file format problems (Linix/DOS), with string eventual end line
+    '''
+    cleaned_line = line.rstrip ('\n')
+
+    return (cleaned_line)
+
+def getLightSVMTrainMetaExtentionsFromFile(libSVMMetaFileName):
+        
+    _logger.debug ('Loading "Train meta" params to file : {}'.format(libSVMMetaFileName))
+    
+    # TODO: does not check if all values have been provided
+    
+    with open (libSVMMetaFileName, 'r') as libsvm_meta_file:
+        
+        line = libsvm_meta_file.readline()
+        if not line:
+            break
+        line = _cleanup_string_read_from_file(line)
+        
+        lstriped_line = line.lstrip()
+        if lstriped_line.startswith ('#'):
+            # comment line => ignore
+            pass
+        else:                    
+            key_string_from_file, value_string_from_file = line.split(':', maxsplit = 1)
+            if key_string_from_file == 'num_train_total':
+                num_train_total = int(value_string_from_file)
+            elif key_string_from_file == 'num_train_this_partition':
+                num_train_this_partition = int(value_string_from_file)
+            elif key_string_from_file == 'feature_dim':
+                feature_dim = int(value_string_from_file)
+            elif key_string_from_file == 'num_labels':
+                num_labels = int(value_string_from_file)
+            elif key_string_from_file == 'format':
+                format = value_string_from_file
+            elif key_string_from_file == 'feature_one_based':
+                feature_one_based = int(value_string_from_file)
+            elif key_string_from_file == 'label_one_based':
+                label_one_based = int(value_string_from_file)
+            elif key_string_from_file == 'snappy_compressed':
+                snappy_compressed = int(value_string_from_file)
+            else:
+                _logger.critical('Unknown meta key name: {}'.format(key_string_from_file))
+                
+    lightsvm_meta_params = LightSVMTrainMetaExtentions (
+        num_train_total = num_train_total,
+        num_train_this_partition = num_train_this_partition,
+        feature_dim = feature_dim,
+        num_labels = num_labels,
+        format = format,
+        feature_one_based = feature_one_based,
+        label_one_based, label_one_based,
+        snappy_compressed = snappy_compressed)
+    
+    return (lightsvm_meta_params)
