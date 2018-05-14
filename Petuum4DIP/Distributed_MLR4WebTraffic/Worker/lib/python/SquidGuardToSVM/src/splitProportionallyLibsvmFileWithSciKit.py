@@ -13,10 +13,11 @@ _logger = logging.getLogger(__name__)
 import unittest
 
 import sklearn.datasets
+import sklearn.model_selection
 
 import ligthsvmutils.metafilemanager
 
-def check_type_percentage(string):
+def _check_type_percentage(string):
     try:
         value = int(string)
 
@@ -43,7 +44,7 @@ def main():
     parser = argparse.ArgumentParser(description='TbD.')
     parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=argparse.FileType('r'), dest="libSVMFile", required=True,
                         help='''The initial full "LIB SVM" formated file, containing the classified content.''')
-    parser.add_argument("-t", "--testPercentage", metavar='<percentage of input to isolate for test>', type=check_type_percentage, dest="testPercentage", required=True,
+    parser.add_argument("-t", "--testPercentage", metavar='<percentage of input to isolate for test>', type=_check_type_percentage, dest="testPercentage", required=True,
                         help='''The percentage of "LIB SVM" to isolate in a separate test file.''')    
     parser.add_argument("--oneBased", action='store_true', dest="oneBased",
                         help='If true, labels and feature indexing will be one based (initial shifting is performed if necessary -- default is true => first label and feature index is "1"')
@@ -75,9 +76,13 @@ def main():
     X = data[0]
     y = data[1]
     
-    X_dense = X.todense()
+    X_dense = X.todense()    
     
+    test_percentage_value = args.testPercentage / 100
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=test_percentage_value, random_state=42, stratify=y)
     
+
+
     pass
 
 
