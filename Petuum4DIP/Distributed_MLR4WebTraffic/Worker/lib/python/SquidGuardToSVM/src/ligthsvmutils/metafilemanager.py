@@ -19,23 +19,22 @@ class LightSVMTrainMetaExtentions():
     _snappy_compressed = 0    
 
     def __init__(self,
-                 num_train_total,
-                 num_train_this_partition,
-                 feature_dim,
-                 num_labels,
-                 feature_one_based,
-                 label_one_based):
+                 k_num_train_total,
+                 k_num_train_this_partition,
+                 k_feature_dim,
+                 k_num_labels,
+                 k_feature_one_based,
+                 k_label_one_based):
         '''
         Constructor
         '''
         
-        self._num_train_total = num_train_total
-        self._num_train_this_partition = num_train_this_partition
-        self._num_test = num_test
-        self._feature_dim = feature_dim
-        self._num_labels = num_labels
-        self._feature_one_based = feature_one_based
-        self._label_one_based = label_one_based        
+        self._num_train_total = k_num_train_total
+        self._num_train_this_partition = k_num_train_this_partition
+        self._feature_dim = k_feature_dim
+        self._num_labels = k_num_labels
+        self._feature_one_based = k_feature_one_based
+        self._label_one_based = k_label_one_based        
         
     def dump_svmlight_metafile(self, libSVMMetaFileName, comment=None):
         
@@ -95,32 +94,30 @@ def getLightSVMTrainMetaExtentionsFromFile(libSVMMetaFileName):
         else:                    
             key_string_from_file, value_string_from_file = line.split(':', maxsplit = 1)
             if key_string_from_file == 'num_train_total':
-                num_train_total = int(value_string_from_file)
+                k_num_train_total = int(value_string_from_file)
             elif key_string_from_file == 'num_train_this_partition':
-                num_train_this_partition = int(value_string_from_file)
+                k_num_train_this_partition = int(value_string_from_file)
             elif key_string_from_file == 'feature_dim':
-                feature_dim = int(value_string_from_file)
+                k_feature_dim = int(value_string_from_file)
             elif key_string_from_file == 'num_labels':
-                num_labels = int(value_string_from_file)
+                k_num_labels = int(value_string_from_file)
             elif key_string_from_file == 'format':
-                format = value_string_from_file
+                k_format = value_string_from_file
             elif key_string_from_file == 'feature_one_based':
-                feature_one_based = int(value_string_from_file)
+                k_feature_one_based = int(value_string_from_file)
             elif key_string_from_file == 'label_one_based':
-                label_one_based = int(value_string_from_file)
+                k_label_one_based = int(value_string_from_file)
             elif key_string_from_file == 'snappy_compressed':
-                snappy_compressed = int(value_string_from_file)
+                k_snappy_compressed = int(value_string_from_file)
             else:
                 _logger.critical('Unknown meta key name: {}'.format(key_string_from_file))
                 
     lightsvm_meta_params = LightSVMTrainMetaExtentions (
-        num_train_total = num_train_total,
-        num_train_this_partition = num_train_this_partition,
-        feature_dim = feature_dim,
-        num_labels = num_labels,
-        format = format,
-        feature_one_based = feature_one_based,
-        label_one_based, label_one_based,
-        snappy_compressed = snappy_compressed)
+        k_num_train_total = k_num_train_total,
+        k_num_train_this_partition = k_num_train_this_partition,
+        k_feature_dim = k_feature_dim,
+        k_num_labels = k_num_labels,
+        k_feature_one_based = k_feature_one_based,
+        k_label_one_based, k_label_one_based)
     
     return (lightsvm_meta_params)
