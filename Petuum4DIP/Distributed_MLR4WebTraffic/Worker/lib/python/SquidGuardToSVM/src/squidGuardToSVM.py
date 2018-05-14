@@ -5,6 +5,7 @@
 import sys
 import logging
 logging.basicConfig (level=logging.WARNING)
+_logger = logging.getLogger(__name__)
 
 import unittest
 
@@ -333,10 +334,10 @@ def squid_log_line_to_model (log_line_dict):
     
     url = urllib.parse.urlparse (normalized_request_url,scheme='http')
     
-    logging.debug('URL: ')
-    logging.debug(request_url)
-    logging.debug(normalized_request_url)    
-    logging.debug(url)
+    _logger.debug('URL: ')
+    _logger.debug(request_url)
+    _logger.debug(normalized_request_url)    
+    _logger.debug(url)
     
     log_line_model['request_url_scheme'] = url.scheme
     log_line_model['request_url_hostname_len'] = len(url.hostname)
@@ -411,8 +412,8 @@ def get_category_from_squidguard_log_line (squidguardLine):
         
     if not squidguardLine_rewrite_result:
         # failed to find what we are searching for => unexpected
-        logging.info ("no valid squidGuard resulting line found. Go on with a dummny line")
-        logging.debug ("\tsquidGuard resulting line: %s" % squidguardLine)
+        _logger.info ("no valid squidGuard resulting line found. Go on with a dummny line")
+        _logger.debug ("\tsquidGuard resulting line: %s" % squidguardLine)
         #
         # rebuild a dummy line to prevent later crash
         squidguardLine_rewrite_result = _SQUIDGUARD_DUMMY_LINE
@@ -536,7 +537,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
                 
                 (new_label_vector, new_feature_vector) = analyzeSingleLogLine (squidguardLine, squidAccesLogLine, squid_log_to_vector_mapper, label_encoder)
                 
-                logging.debug ((new_label_vector, new_feature_vector))
+                _logger.debug ((new_label_vector, new_feature_vector))
                 
                 squidAccesLog_array_with_new_line = numpy.append (squidAccesLog_array, [new_feature_vector], axis=0)
                 squidAccesLog_array = squidAccesLog_array_with_new_line
@@ -564,7 +565,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
     #
     # dump to svmlight format
     #
-    logging.info ('Generating LIBSvm file: {}'.format(libSVMFileName))
+    _logger.info ('Generating LIBSvm file: {}'.format(libSVMFileName))
     with open (libSVMFileName, 'w') as libSVMFile:
         X = squidAccesLog_array
         y = squidAccessLog_label_vector[:,0]
@@ -591,7 +592,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
         num_labels = num_labels)
     
 
-    logging.info ('Generating corresponding "meta" file')
+    _logger.info ('Generating corresponding "meta" file')
     libSVMMetaFileName = libSVMFileName + '.meta'
     lightsvm_meta_params.dump_svmlight_metafile (libSVMMetaFileName, comment='Generated at: {}'.format (hr_now))
 
@@ -600,7 +601,7 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
     # dump labels
     #
     if labelListDumpFileName:
-        logging.info ('Generating label index table to file: {}'.format(labelListDumpFileName))
+        _logger.info ('Generating label index table to file: {}'.format(labelListDumpFileName))
         dump_labels_to_file (label_encoder, labelListDumpFileName, comment='Generated at: {}'.format (hr_now))
         
 
@@ -642,12 +643,13 @@ def main():
         
     # TODO: what to do with "1"based
     if (_label_one_based or _feature_one_based):
-        logging.critical("One base is not yet implemented")
+        _logger.critical("One base is not yet implemented")
         sys.exit(1)
          
     
     if args.debug:
-        logging.getLogger().setLevel (logging.DEBUG)
+        root_logger = logging.getLogger()
+        root_logger.setLevel (level = logging.DEBUG)
         
     #
     # start analysis
