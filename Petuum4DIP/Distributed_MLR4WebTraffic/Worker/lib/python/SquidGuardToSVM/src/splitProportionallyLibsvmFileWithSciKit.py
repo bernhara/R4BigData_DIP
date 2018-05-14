@@ -16,6 +16,13 @@ import sklearn.datasets
 
 import ligthsvmutils.metafilemanager
 
+def check_type_percentage(string):
+    value = int(string)
+    if value in range(0,101):
+        return value
+    else:
+        msg = "%r should be within 0 and 100" % string
+        raise argparse.ArgumentTypeError(msg)
 
 def main():
     
@@ -27,8 +34,10 @@ def main():
     # add *one_based params
     
     parser = argparse.ArgumentParser(description='TbD.')
-    parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=str, dest="libSVMFile", required=True,
+    parser.add_argument("-p", "--libSVMFile", metavar='<libsvm for Petuum MLR>', type=argparse.FileType('r'), dest="libSVMFile", required=True,
                         help='''The initial full "LIB SVM" formated file, containing the classified content.''')
+    parser.add_argument("-t", "--testPercentage", metavar='<percentage of input to isolate for test>', type=check_type_percentage, dest="testPercentage", required=True,
+                        help='''The percentage of "LIB SVM" to isolate in a separate test file.''')    
     parser.add_argument("--oneBased", action='store_true', dest="oneBased",
                         help='If true, labels and feature indexing will be one based (initial shifting is performed if necessary -- default is true => first label and feature index is "1"')
     parser.add_argument("-d", "--debug", action='store_true', dest="debug")       
@@ -50,17 +59,17 @@ def main():
     
     # get META elements
     
-    libSVM_meta_file_name = args.libSVMFile + '.meta'
+    
+    libSVM_meta_file_name = args.libSVMFile.name + '.meta'
     lightsvm_meta_params = ligthsvmutils.metafilemanager.getLightSVMTrainMetaExtentionsFromFile (libSVM_meta_file_name)
     
-    with open (args.libSVMFile, 'rb') as libSVMFile: 
+    with open (args.libSVMFile.name, 'rb') as libSVMFile: 
         data = sklearn.datasets.load_svmlight_file(libSVMFile, n_features = lightsvm_meta_params._feature_dim, zero_based = True, multilabel = False, offset = 0)
     X = data[0]
     y = data[1]
     
     X_dense = X.todense()
     
-    data1 = sklearn.datasets.load_svmlight_file(libSVMFile)
     
     pass
 
