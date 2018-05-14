@@ -17,12 +17,19 @@ import sklearn.datasets
 import ligthsvmutils.metafilemanager
 
 def check_type_percentage(string):
-    value = int(string)
+    try:
+        value = int(string)
+
+    except:
+        msg = "%r should be an integer within 0 and 100" % string
+        raise argparse.ArgumentTypeError(msg)
+    
     if value in range(0,101):
         return value
     else:
-        msg = "%r should be within 0 and 100" % string
-        raise argparse.ArgumentTypeError(msg)
+        msg = '''%r is out of range [0..100]''' % string
+        raise argparse.ArgumentTypeError(msg)        
+        
 
 def main():
     
