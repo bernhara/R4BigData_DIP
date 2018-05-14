@@ -455,7 +455,7 @@ def get_category_from_squidguard_log_line (squidguardLine):
         if len(tag_name_and_value_list) !=2:
             # this tag is not well formated
             # skip it
-            logger.error ("found a badly formated tag: %s" % squidguard_tag)
+            _logger.error ("found a badly formated tag: %s" % squidguard_tag)
             continue
         
         tag_name, tag_value = tag_name_and_value_list
@@ -566,11 +566,11 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
     # dump to svmlight format
     #
     _logger.info ('Generating LIBSvm file: {}'.format(libSVMFileName))
-    with open (libSVMFileName, 'w') as libSVMFile:
+    with open (libSVMFileName, 'wb') as libSVMFile:
         X = squidAccesLog_array
         y = squidAccessLog_label_vector[:,0]
         
-        sklearn.datasets.dump_svmlight_file(X=X, y=y, f=libSVMFileName, zero_based=True, comment='Generated at: {}'.format (hr_now), query_id=None, multilabel=False)            
+        sklearn.datasets.dump_svmlight_file(X=X, y=y, f=libSVMFile, zero_based=True, comment='Generated at: {}'.format (hr_now), query_id=None, multilabel=False)            
 
     #   
     # generate "meta" file
@@ -579,17 +579,14 @@ def squidGuardOutputFileToLibSVMInputFile (squidGuardFileName,
     num_train_total = input_file_line_numbers
     # TODO: test with one worker, input file not split
     num_train_this_partition = num_train_total
-    # FIXME: test file size is currently not computed
-    num_test = 1
     feature_dim = len (squid_log_to_vector_mapper.get_feature_names())
     num_labels = label_encoder.classes_.size
     
-    lightsvm_meta_params = ligthsvmutils.metafilemanager.LightSVMMetaExtentions (
-        num_train_total = num_train_total,
-        num_train_this_partition = num_train_this_partition,
-        num_test = num_test,
-        feature_dim = feature_dim,
-        num_labels = num_labels)
+    lightsvm_meta_params = ligthsvmutils.metafilemanager.LightSVMTrainMetaExtentions (
+        k_num_train_total = num_train_total,
+        k_num_train_this_partition = num_train_this_partition,
+        k_feature_dim = feature_dim,
+        k_num_labels = num_labels)
     
 
     _logger.info ('Generating corresponding "meta" file')
