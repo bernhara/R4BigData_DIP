@@ -659,57 +659,6 @@ def main():
                                            labelListDumpFileName = args.categoriesDumpFile,
                                            maxSamples = args.sampleLimit)
     return
-    # TODO: !! Main does not use command line args
-    
-    squid_log_to_vector_mapper = init_model_feature_mapper(dense=True)    
-    
-    #
-    # analyze input log line
-    #
-    _sample1 = '1523278970.216      1 ::1 TCP_MISS/503 4539 GET http://s-eunuc:4040/api/topology? - HIER_NONE/- text/html'
-    
-    
-    
-    log_line_field_list = squidutils.io.getLogLineFields (_sample1)
-    cleared_log_line = squid_log_line_to_model (log_line_field_list)    
-    
-    #
-    # map to vector
-    #
-    
-    logline_as_matrix = squid_log_to_vector_mapper.transform(cleared_log_line)
-    
-    #
-    # dump to svmlight format
-    #
-    
-
-    
-    l1 = [1, 2, 3, 4, 5]
-    l2 = [2, 3, 4, 5, 5]
-    l3 = [1, 4, 3, 2, 1]
-
-    Xm = numpy.array([l1, l2])
-    Xm = numpy.append (Xm, [l3], axis=0)
-    
-    X = Xm[:, 2:]
-    y = Xm[:, :2]    
-    
-    le = sklearn.preprocessing.LabelEncoder()
-    le.fit(["l7", "l0", "l1", "l2", "l3"])
-    labels_for_all_lines = le.transform(["l0", "l2", "l1"])
-
-    #!! Xm_with_labels = numpy.insert(Xm, 0, labels, axis=1)
-    
-    sklearn.datasets.dump_svmlight_file(X=Xm, y=labels_for_all_lines, f="toto.txt", zero_based=True, comment="Comment for test", query_id=None, multilabel=False)    
-    
-    
-    sys.exit(1)
-    # NOT REACHED
-    
-
-
-
 
 
 
