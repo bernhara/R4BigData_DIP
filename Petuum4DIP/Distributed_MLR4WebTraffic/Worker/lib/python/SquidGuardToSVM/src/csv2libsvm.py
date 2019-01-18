@@ -269,6 +269,10 @@ y_df = df[['label']]
 feature_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
 # enumerate all possible feature values
 #!!feature_mapper = feature_vectorizer.fit ([{'f1':0}, {'f1':1}, {'f2':0}, {'f2':1}, {'f3':0}, {'f3':1}])
+
+feature_value_list = []
+feature_value_list.append ([{'global_waterheater_status':'ON'}, {'global_waterheater_status':'OFF'}])
+
 feature_mapper = feature_vectorizer.fit ([{'global_waterheater_status':'ON'}, {'global_waterheater_status':'OFF'}])
                                           
 matrix_as_dict_list = X_df.to_dict('records')
@@ -315,16 +319,6 @@ labels_as_vector = label_encoder.transform (y_df_as_list)
 y = labels_as_vector
 
 
-
-
-
-
-
-# y_df_as_dict_list = y_df.to_dict('records')
-# y_df_as_dict_list = [ {'label': 'START:Bathroom|Showering'} ]
-# y_matrix = label_mapper.transform(y_df_as_dict_list)
-# y = y_matrix[:,0]
-# x = labels_as_vector
 
 with open ('samples/Orange4Home/out/states_orange4home_libsvm.txt', 'wb') as libSVMFile:
     
