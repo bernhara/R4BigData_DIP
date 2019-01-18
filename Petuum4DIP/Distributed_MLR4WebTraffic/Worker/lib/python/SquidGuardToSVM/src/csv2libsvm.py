@@ -21,9 +21,11 @@ y_df = df[['labels']]
 #
 
 feature_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
+# enumerate all possible feature values
 feature_mapper = feature_vectorizer.fit ([{'f1':0}, {'f1':1}, {'f2':0}, {'f2':1}, {'f3':0}, {'f3':1}])
                                           
 label_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
+# enumerate all possible label values
 label_mapper = label_vectorizer.fit ([{'label':0}, {'label':1}, {'label':2}])
 
 matrix_as_dict_list = X_df.to_dict('records')
