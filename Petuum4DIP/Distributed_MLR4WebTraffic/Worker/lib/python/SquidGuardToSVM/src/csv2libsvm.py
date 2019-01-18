@@ -3,7 +3,6 @@ import sys
 import pandas as pd
 import sklearn.feature_extraction
 import sklearn.datasets
-import sklearn.preprocessing
 
 import csv
 
@@ -30,7 +29,6 @@ feature_mapper = feature_vectorizer.fit ([{'f1':0}, {'f1':1}, {'f2':0}, {'f2':1}
 label_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
 label_mapper = label_vectorizer.fit ([{'label':0}, {'label':1}, {'label':2}])
 
-X_empty = feature_mapper.transform ([])
 matrix_as_dict_list = X_df.to_dict('records')
 X = feature_mapper.transform (matrix_as_dict_list)
 
