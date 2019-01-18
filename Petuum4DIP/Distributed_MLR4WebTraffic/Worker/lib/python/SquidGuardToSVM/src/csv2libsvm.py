@@ -15,13 +15,10 @@ df = pd.read_csv('samples/input_test/csv2libsvm_example.csv', header=1, sep=',',
 X_df = df.loc[:, 'f1':'f3']
 y_df = df[['labels']]
 
-fd = open('samples/input_test/csv2libsvm_example.csv')
-input_file_csv_reader = csv.DictReader(fd)
-matrix_as_dict_list = []
-for row in input_file_csv_reader:
-    striped_row = {fieldname.strip('\t'): value.strip('\t') for (fieldname, value) in row.items()}
-    matrix_as_dict_list.append(striped_row)
 
+#
+# create vectorizers
+#
 
 feature_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
 feature_mapper = feature_vectorizer.fit ([{'f1':0}, {'f1':1}, {'f2':0}, {'f2':1}, {'f3':0}, {'f3':1}])
