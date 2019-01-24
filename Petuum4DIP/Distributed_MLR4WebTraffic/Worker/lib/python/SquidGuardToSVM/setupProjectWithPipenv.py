@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+from sys import stdout
 
 os.putenv("PIPENV_VENV_IN_PROJECT", "1")
 
@@ -22,9 +23,23 @@ os.putenv("PATH", new_PATH)
 # prepare the command to launch
 pipenv_launch_command = quoted_sys_executable + ' -m pipenv ' + '--python ' + quoted_sys_executable
 
-command_to_call =  pipenv_launch_command + ' install --dev' 
+# check ifo pipenv environment already exists
+check_venv_command = pipenv_launch_command + ' --venv'
 
-if __name__ == '__main__':
-    status = subprocess.call(command_to_call)
-    sys.exit (status)
+p = subprocess.run(check_venv_command, shell=False, check=False, universal_newlines=True)
+print ("DONE")
+print (p.returncode)
+print (stdout)
+
+if p.returncode == 1:
+
+    create_venv_command =  pipenv_launch_command + ' install' 
+    p = subprocess.run(create_venv_command, shell=False, check=False, universal_newlines=True)
     
+else:
+    
+    update_venv_command =  pipenv_launch_command + ' sync' 
+    p = subprocess.run(update_venv_command, shell=False, check=False, universal_newlines=True)    
+    
+
+
