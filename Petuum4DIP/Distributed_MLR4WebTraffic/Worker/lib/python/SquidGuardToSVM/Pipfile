@@ -4,12 +4,13 @@ name = "pypi"
 verify_ssl = true
 
 [packages]
-
-[dev-packages]
+pandas = "*"
 numpy = "*"
 scikit-learn = "*"
 scipy = "*"
-pandas = "*"
+
+[dev-packages]
+
 
 [requires]
-python_version = "3.5"
+python_version = "3.6"
