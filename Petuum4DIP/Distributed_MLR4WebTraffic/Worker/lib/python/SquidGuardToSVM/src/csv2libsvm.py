@@ -5,7 +5,6 @@ import sklearn.feature_extraction
 import sklearn.datasets
 import sklearn.preprocessing
 
-
 import csv
 
 from datetime import datetime
