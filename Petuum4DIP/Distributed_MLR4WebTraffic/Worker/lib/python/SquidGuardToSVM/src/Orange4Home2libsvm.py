@@ -13,10 +13,7 @@ from datetime import datetime
 df = pd.read_csv('samples/Orange4Home/in/states_orange4home_tenlines.csv', header=0, sep=',')
 
 
-#!!                 names=['labels', 'f1', 'f2', 'f3'])   # columns names if no header
-# df = pd.read_csv('samples/input_test/csv2libsvm_example.csv', header='infer', sep=',', verbose=True)
-
-                
+               
 used_features = [
 #'Time',
 'bathroom_shower_coldwater_instantaneous',
@@ -280,6 +277,8 @@ _LABEL_LIST = [
     'START:Living_room|Eating',
 ]
 
+_LABEL_LIST.append('START:Entrance|Entering')
+
 #---
 
 def get_model_mapping_for_vectorizer ():
@@ -342,27 +341,22 @@ label_encoder = init_label_encoder(_LABEL_LIST)
 #
 #=====================================================================================================================================
 
-#!!!X_df = df.loc[:, 'bathroom_shower_coldwater_instantaneous':'kitchen_washingmachine_partial_energy']
-# get known features sub-matrix
+# Create X
 known_features = [ feature_name for (feature_name, _) in _FEATURE_VALUE_DEFINITION_LIST]
 X_df = df.loc[:, known_features]
 
-                                      
+                                    
 matrix_as_dict_list = X_df.to_dict('records')
 encoded_features = Orange4Home_to_vector_mapper.transform (matrix_as_dict_list)
 X = encoded_features
 
-y_df_as_list = y_df['label'].tolist()
+# Create y
+y_df = df['label']
+y_df_as_list = y_df.values
 encoded_labels = label_encoder.transform (y_df_as_list)
 y = encoded_labels
 
 # ===============================
-
-
-y_df_as_list = y_df['label'].tolist()
-labels_as_vector = label_encoder.transform (y_df_as_list)
-y = labels_as_vector
-
 
 
 with open ('samples/Orange4Home/out/states_orange4home_libsvm.txt', 'wb') as libSVMFile:
