@@ -1,6 +1,7 @@
 import sys
 
 import pandas as pd
+import numpy as np
 import sklearn.feature_extraction
 import sklearn.datasets
 import sklearn.preprocessing
@@ -260,9 +261,10 @@ used_features = [
 #
 #=====================================================================================================================================
 
-_FEATURE_VALUE_DEFINITION_LIST = [
-    ('global_waterheater_status', (['ON', 'OFF'], None)),
-]
+_FEATURE_VALUE_DEFINITION_LIST = []
+_FEATURE_VALUE_DEFINITION_LIST.append ( ('global_waterheater_status', (['ON', 'OFF'], None)) )
+_FEATURE_VALUE_DEFINITION_LIST.append ( ('livingroom_presence_table', (['ON', 'OFF'], None)) )
+
 
 _LABEL_LIST = [
     'START:Bathroom|Cleaning',
@@ -343,12 +345,19 @@ label_encoder = init_label_encoder(_LABEL_LIST)
 
 # Create X
 known_features = [ feature_name for (feature_name, _) in _FEATURE_VALUE_DEFINITION_LIST]
-X_df = df.loc[:, known_features]
 
-                                    
-matrix_as_dict_list = X_df.to_dict('records')
-encoded_features = Orange4Home_to_vector_mapper.transform (matrix_as_dict_list)
-X = encoded_features
+X = None
+for feature_name in known_features:
+
+    X_df = df.loc[:, [feature_name]]
+
+    matrix_as_dict_list = X_df.to_dict('records')
+    encoded_features = Orange4Home_to_vector_mapper.transform (matrix_as_dict_list)
+    if X is None:
+        X = encoded_features        
+    else:
+        X = np.append (X, encoded_features, axis=1)        
+
 
 # Create y
 y_df = df['label']
@@ -365,6 +374,37 @@ with open ('samples/Orange4Home/out/states_orange4home_libsvm.txt', 'wb') as lib
     hr_now = now.strftime("%A %d/%m/%Y %Hh%M")    
     
     sklearn.datasets.dump_svmlight_file(X=X, y=y, f=libSVMFile, zero_based=True, comment='Generated at: {}'.format (hr_now), query_id=None, multilabel=False)
+    
+
+#
+# dump feature and label name mapping
+#
+
+_label_one_based = False
+def dump_labels_to_file (label_encoder, categories_dump_file_name, comment = None):
+    
+    global _label_one_based
+    
+    all_label_list = list(label_encoder.classes_)
+    
+    # TODO: !! Manage label_one_based in dump_labels_to_file
+    _label_one_based = 0 # FIXME: !! to remove
+    if _label_one_based:
+        startIndex = 1
+    else:
+        startIndex = 0
+    
+    with open (categories_dump_file_name, 'w') as categoriesDumpFile:
+        
+        print ('# {}'.format (comment), file=categoriesDumpFile)        
+        
+        for label in all_label_list:
+            transformed_label_array = label_encoder.transform([label])
+            transformed_label = transformed_label_array[0]
+            print ('{} {}'.format(transformed_label, label), file = categoriesDumpFile)   
+            
+            
+dump_labels_to_file (label_encoder, 'samples/Orange4Home/out/LABELS_states_orange4home_libsvm.txt', 'zero based label list')             
          
 
 print ("Transformation ended")
