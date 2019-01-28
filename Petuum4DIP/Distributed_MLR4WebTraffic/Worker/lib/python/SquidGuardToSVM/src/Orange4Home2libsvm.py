@@ -380,21 +380,17 @@ with open ('samples/Orange4Home/out/states_orange4home_libsvm.txt', 'wb') as lib
 # dump feature and label name mapping
 #
 
-_label_one_based = False
-def dump_labels_to_file (label_encoder, categories_dump_file_name, comment = None):
-    
-    global _label_one_based
+def dump_label_mapping_to_file (label_encoder, label_dump_file_name, comment = None, label_one_based = False):
     
     all_label_list = list(label_encoder.classes_)
     
     # TODO: !! Manage label_one_based in dump_labels_to_file
-    _label_one_based = 0 # FIXME: !! to remove
-    if _label_one_based:
+    if label_one_based:
         startIndex = 1
     else:
         startIndex = 0
     
-    with open (categories_dump_file_name, 'w') as categoriesDumpFile:
+    with open (label_dump_file_name, 'w') as categoriesDumpFile:
         
         print ('# {}'.format (comment), file=categoriesDumpFile)        
         
@@ -404,7 +400,31 @@ def dump_labels_to_file (label_encoder, categories_dump_file_name, comment = Non
             print ('{} {}'.format(transformed_label, label), file = categoriesDumpFile)   
             
             
-dump_labels_to_file (label_encoder, 'samples/Orange4Home/out/LABELS_states_orange4home_libsvm.txt', 'zero based label list')             
+dump_label_mapping_to_file (label_encoder, 'samples/Orange4Home/out/LABELS_states_orange4home_libsvm.txt', 'zero based label list')
+
+def dump_feature_mapping_to_file (feature_encoder, feature_dump_file_name, comment = None, feature_one_based = False):
+    
+    global _FEATURE_VALUE_DEFINITION_LIST    
+    
+    # TODO: !! Manage label_one_based in dump_labels_to_file
+    if feature_one_based:
+        startIndex = 1
+    else:
+        startIndex = 0
+    
+    with open (feature_dump_file_name, 'w') as dumpFile:
+        
+        print ('# {}'.format (comment), file=dumpFile)
+        
+        for feature_value_definition in _FEATURE_VALUE_DEFINITION_LIST:
+            feature, label_mapping_specification = feature_value_definition
+            feature_values, _ = label_mapping_specification
+        
+            for feature_value  in feature_values:
+                mapped_feature = feature_encoder.fit_transform([{feature:feature_value}])
+                print ('{} {}'.format(mapped_feature, feature_value), file = dumpFile)   
+            
+dump_feature_mapping_to_file (Orange4Home_to_vector_mapper, 'samples/Orange4Home/out/FEATURES_states_orange4home_libsvm.txt', 'zero based label list')             
          
 
 print ("Transformation ended")
