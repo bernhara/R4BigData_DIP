@@ -5,12 +5,14 @@ import sklearn.feature_extraction
 import sklearn.datasets
 import sklearn.preprocessing
 
-
 import csv
 
 from datetime import datetime
 
-df = pd.read_csv('samples/Orange4Home/in/filtered_states_orange4home.csv', header=0, sep=',')
+#!! df = pd.read_csv('samples/Orange4Home/in/filtered_states_orange4home.csv', header=0, sep=',')
+df = pd.read_csv('samples/Orange4Home/in/states_orange4home_tenlines.csv', header=0, sep=',')
+
+
 #!!                 names=['labels', 'f1', 'f2', 'f3'])   # columns names if no header
 # df = pd.read_csv('samples/input_test/csv2libsvm_example.csv', header='infer', sep=',', verbose=True)
 
@@ -282,19 +284,6 @@ X = feature_mapper.transform (matrix_as_dict_list)
 
 label_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
 # enumerate all possible label values
-
-label_values_dict_list = [
-    {'label': 'START:Bathroom|Cleaning'},
-    {'label': 'START:Bathroom|Showering'},
-    {'label': 'START:Bathroom|Using_the_sink'},
-    {'label': 'START:Kitchen|Cleaning'},
-    {'label': 'START:Kitchen|Cooking'},
-    {'label': 'START:Kitchen|Preparing'},
-    {'label': 'START:Kitchen|Washing_the_dishes'},
-    {'label': 'START:Living_room|Cleaning'},
-    {'label': 'START:Living_room|Computing'},
-    {'label': 'START:Living_room|Eating'},
-]
 
 label_list = [
     'START:Bathroom|Cleaning',
