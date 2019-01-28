@@ -257,10 +257,95 @@ used_features = [
 'office_window',
 ]
 
+#=====================================================================================================================================
+#
+# imports from SquidGuard example
+#
+#=====================================================================================================================================
 
+_FEATURE_VALUE_DEFINITION_LIST = [
+    ('global_waterheater_status', (['ON', 'OFF'], None)),
+]
+
+_LABEL_LIST = [
+    'START:Bathroom|Cleaning',
+    'START:Bathroom|Showering',
+    'START:Bathroom|Using_the_sink',
+    'START:Kitchen|Cleaning',
+    'START:Kitchen|Cooking',
+    'START:Kitchen|Preparing',
+    'START:Kitchen|Washing_the_dishes',
+    'START:Living_room|Cleaning',
+    'START:Living_room|Computing',
+    'START:Living_room|Eating',
+]
+
+#---
+
+def get_model_mapping_for_vectorizer ():
+    
+    global _FEATURE_VALUE_DEFINITION_LIST
+    
+    feature_and_value_mapping_lists = []
+    
+    for feature_value_definition in _FEATURE_VALUE_DEFINITION_LIST:
+        feature, label_mapping_specification = feature_value_definition
+        labels, _ = label_mapping_specification
+        feature_label_list = [{feature:label} for label in labels]
+        
+        feature_and_value_mapping_lists.extend (feature_label_list)
+        
+    return feature_and_value_mapping_lists  
+
+def init_model_feature_mapper (dense=True):
+    
+    model_mapper = None
+    
+    #
+    # build model mapper
+    #
+    
+    squid_model_mapping = get_model_mapping_for_vectorizer()
+    
+    if dense:
+    
+        # dense version
+        
+        squid_log_to_dense_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
+        squid_log_to_dense_vector_mapper.fit (squid_model_mapping)
+        
+        model_mapper = squid_log_to_dense_vector_mapper
+    else:
+    
+        # sparse version
+        squid_log_to_sparse_vector_mapper = sklearn.feature_extraction.DictVectorizer(sparse=True, sort=False)
+        squid_log_to_sparse_vector_mapper.fit (squid_model_mapping)
+        
+        model_mapper = squid_log_to_sparse_vector_mapper
+    
+    return model_mapper
+
+def init_label_encoder (label_name_list):
+    
+    label_encoder = sklearn.preprocessing.LabelEncoder()
+    label_encoder.fit(label_name_list)
+    
+    
+    return label_encoder
+
+#---
+
+Orange4Home_to_vector_mapper = init_model_feature_mapper(dense=True)
+label_encoder = init_label_encoder(_LABEL_LIST)
+
+#=====================================================================================================================================
+#
+#=====================================================================================================================================
 
 #!!!X_df = df.loc[:, 'bathroom_shower_coldwater_instantaneous':'kitchen_washingmachine_partial_energy']
-X_df = df.loc[:, used_features]
+# get known features sub-matrix
+known_features = [ feature_name for (feature_name, _) in _FEATURE_VALUE_DEFINITION_LIST]
+X_df = df.loc[:, known_features]
 y_df = df[['label']]
 
 
@@ -278,25 +363,18 @@ feature_value_list.append ([{'global_waterheater_status':'ON'}, {'global_waterhe
 feature_mapper = feature_vectorizer.fit ([{'global_waterheater_status':'ON'}, {'global_waterheater_status':'OFF'}])
                                           
 matrix_as_dict_list = X_df.to_dict('records')
-X = feature_mapper.transform (matrix_as_dict_list)
+X = Orange4Home_to_vector_mapper (matrix_as_dict_list)
 
 # ===============================
+
+
+
+
 
 label_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
 # enumerate all possible label values
 
-label_list = [
-    'START:Bathroom|Cleaning',
-    'START:Bathroom|Showering',
-    'START:Bathroom|Using_the_sink',
-    'START:Kitchen|Cleaning',
-    'START:Kitchen|Cooking',
-    'START:Kitchen|Preparing',
-    'START:Kitchen|Washing_the_dishes',
-    'START:Living_room|Cleaning',
-    'START:Living_room|Computing',
-    'START:Living_room|Eating',
-]
+
 
 label_encoder = sklearn.preprocessing.LabelEncoder()
 label_encoder.fit(label_list)
