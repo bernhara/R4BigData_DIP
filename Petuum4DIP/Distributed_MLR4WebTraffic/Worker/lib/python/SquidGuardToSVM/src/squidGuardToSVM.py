@@ -221,7 +221,6 @@ def init_label_encoder (label_name_list):
                   
 def dump_labels_to_file (label_encoder, categories_dump_file_name, comment = None):
     
-    global _squidGuardCategories
     global _label_one_based
     
     all_label_list = list(label_encoder.classes_)
