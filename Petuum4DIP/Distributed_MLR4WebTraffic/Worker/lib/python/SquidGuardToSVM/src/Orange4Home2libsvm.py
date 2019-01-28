@@ -356,8 +356,17 @@ for feature_name in known_features:
     if X is None:
         X = encoded_features        
     else:
-        X = np.append (X, encoded_features, axis=1)        
+        X = np.add (X, encoded_features)
+        
+# FIXME: // alternative
+X_df = df.loc[:, known_features]
 
+matrix_as_dict_list = X_df.to_dict('records')
+encoded_features = Orange4Home_to_vector_mapper.transform (matrix_as_dict_list)
+X = encoded_features
+
+# FIXME: // end of alternative
+ 
 
 # Create y
 y_df = df['label']
