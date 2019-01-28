@@ -346,40 +346,18 @@ label_encoder = init_label_encoder(_LABEL_LIST)
 # get known features sub-matrix
 known_features = [ feature_name for (feature_name, _) in _FEATURE_VALUE_DEFINITION_LIST]
 X_df = df.loc[:, known_features]
-y_df = df[['label']]
 
-
-#
-# create vectorizers
-#
-
-feature_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
-# enumerate all possible feature values
-#!!feature_mapper = feature_vectorizer.fit ([{'f1':0}, {'f1':1}, {'f2':0}, {'f2':1}, {'f3':0}, {'f3':1}])
-
-feature_value_list = []
-feature_value_list.append ([{'global_waterheater_status':'ON'}, {'global_waterheater_status':'OFF'}])
-
-feature_mapper = feature_vectorizer.fit ([{'global_waterheater_status':'ON'}, {'global_waterheater_status':'OFF'}])
-                                          
+                                      
 matrix_as_dict_list = X_df.to_dict('records')
-X = Orange4Home_to_vector_mapper (matrix_as_dict_list)
+encoded_features = Orange4Home_to_vector_mapper.transform (matrix_as_dict_list)
+X = encoded_features
+
+y_df_as_list = y_df['label'].tolist()
+encoded_labels = label_encoder.transform (y_df_as_list)
+y = encoded_labels
 
 # ===============================
 
-
-
-
-
-label_vectorizer = sklearn.feature_extraction.DictVectorizer(sparse=False, sort=False)
-# enumerate all possible label values
-
-
-
-label_encoder = sklearn.preprocessing.LabelEncoder()
-label_encoder.fit(label_list)
-
-#!!! label_as_vector = label_encoder.transform(['START:Bathroom|Cleaning', 'START:Living_room|Eating'])
 
 y_df_as_list = y_df['label'].tolist()
 labels_as_vector = label_encoder.transform (y_df_as_list)
