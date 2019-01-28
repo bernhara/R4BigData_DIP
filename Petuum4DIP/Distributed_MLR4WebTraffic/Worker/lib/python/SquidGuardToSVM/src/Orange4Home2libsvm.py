@@ -411,6 +411,8 @@ def dump_feature_mapping_to_file (feature_encoder, feature_dump_file_name, comme
         startIndex = 1
     else:
         startIndex = 0
+        
+    tt = feature_encoder.get_params(deep=True)
     
     with open (feature_dump_file_name, 'w') as dumpFile:
         
@@ -421,8 +423,8 @@ def dump_feature_mapping_to_file (feature_encoder, feature_dump_file_name, comme
             feature_values, _ = label_mapping_specification
         
             for feature_value  in feature_values:
-                mapped_feature = feature_encoder.fit_transform([{feature:feature_value}])
-                print ('{} {}'.format(mapped_feature, feature_value), file = dumpFile)   
+                mapped_feature = feature_encoder.transform([{feature:feature_value}])
+                print ('{} {}:{}'.format(mapped_feature, feature, feature_value), file = dumpFile)   
             
 dump_feature_mapping_to_file (Orange4Home_to_vector_mapper, 'samples/Orange4Home/out/FEATURES_states_orange4home_libsvm.txt', 'zero based label list')             
          
