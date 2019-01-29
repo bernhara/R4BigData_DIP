@@ -5,8 +5,8 @@ import subprocess
 os.putenv("PIPENV_VENV_IN_PROJECT", "1")
 
 # TODO: proxy config should be optional and confirable
-os.putenv("http_proxy", "http://proxy:8080")
-os.putenv("https_proxy", "http://proxy:8080")
+os.putenv("http_proxy", "http://proxy:3128")
+os.putenv("https_proxy", "http://proxy:3128")
 
 quoted_sys_executable = '"%s"' % sys.executable
 
